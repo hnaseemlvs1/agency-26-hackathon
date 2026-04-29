@@ -201,7 +201,7 @@ app.post('/api/ai-search', async (req, res) => {
     const client = await pool.connect();
     let dbRows = [];
     try {
-      await client.query("SET statement_timeout = '240000'"); // 2 min max
+      await client.query("SET statement_timeout = '600000'"); // 2 min max
       const result = await client.query(generatedSQL);
       dbRows = result.rows;
     } finally {

@@ -197,43 +197,59 @@
   }
 
   /* Page layout */
-  .app { max-width: 1320px; margin: 0 auto; padding: 28px 24px 56px; }
+  .app { max-width: 1320px; margin: 0 auto; padding: 16px 24px 48px; }
 
+  /* Compact page header — title, demo pill, live indicator on one line */
   .page-header {
     display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 16px;
+    align-items: center;
+    gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
   }
-  .page-title h1 {
-    font-size: 24px;
+  .page-title-line { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; flex: 1; min-width: 0; }
+  .page-title-line h1 {
+    font-size: 18px;
     font-weight: 700;
-    letter-spacing: -0.3px;
+    letter-spacing: -0.2px;
     color: var(--lv-text);
-    margin-bottom: 6px;
+    margin: 0;
   }
-  .page-title .subtitle {
+  .page-title-line .lede {
     color: var(--lv-muted);
-    font-size: 14px;
-    max-width: 760px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .demo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--lv-warn-bg);
+    border: 1px solid rgba(217,119,6,0.25);
+    color: var(--lv-warn);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    cursor: help;
   }
   .live-indicator {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
+    gap: 6px;
+    padding: 3px 10px;
     background: var(--lv-green-bg);
     border: 1px solid rgba(45,168,44,0.25);
     border-radius: 999px;
     color: var(--lv-green-dark);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.2px;
   }
   .live-indicator .dot {
-    width: 7px; height: 7px;
+    width: 6px; height: 6px;
     border-radius: 50%;
     background: var(--lv-green);
     box-shadow: 0 0 0 0 rgba(45,168,44,0.6);
@@ -251,34 +267,18 @@
   }
   .live-indicator.paused .dot { background: var(--lv-warn); animation: none; }
 
-  /* Demo ribbon */
-  .demo-ribbon {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 10px 14px;
-    background: var(--lv-warn-bg);
-    border: 1px solid rgba(217,119,6,0.25);
-    border-radius: var(--radius-md);
-    color: var(--lv-text-2);
-    font-size: 13px;
-    line-height: 1.5;
-    margin-bottom: 20px;
-  }
-  .demo-ribbon strong { color: var(--lv-warn); }
-
-  /* KPI strip */
+  /* Compact KPI strip */
   .kpi-strip {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 14px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
   }
   .kpi-card {
     background: var(--lv-surface);
     border: 1px solid var(--lv-border);
-    border-radius: var(--radius-lg);
-    padding: 16px 18px;
+    border-radius: var(--radius-md);
+    padding: 8px 12px 9px;
     box-shadow: var(--shadow-sm);
     position: relative;
     overflow: hidden;
@@ -286,46 +286,55 @@
   .kpi-card::before {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
+    top: 0; left: 0; bottom: 0;
+    width: 3px;
     background: var(--lv-green);
   }
   .kpi-card.amber::before { background: var(--lv-warn); }
   .kpi-card.purple::before { background: var(--lv-purple); }
   .kpi-card.blue::before { background: var(--lv-info); }
   .kpi-label {
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 9px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.7px;
     color: var(--lv-muted);
-    margin-bottom: 8px;
+    margin-bottom: 2px;
+  }
+  .kpi-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
   }
   .kpi-value {
-    font-size: 26px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--lv-text);
-    letter-spacing: -0.4px;
+    letter-spacing: -0.3px;
     line-height: 1.1;
   }
-  .kpi-sub {
-    font-size: 12px;
-    color: var(--lv-muted);
-    margin-top: 6px;
+  .kpi-value.text {
+    font-size: 13px;
+    font-weight: 600;
   }
   .kpi-delta {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    font-size: 11px;
+    gap: 2px;
+    font-size: 10px;
     font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-top: 6px;
+    padding: 1px 5px;
+    border-radius: 3px;
   }
   .kpi-delta.up { background: var(--lv-green-bg); color: var(--lv-green-dark); }
   .kpi-delta.down { background: var(--lv-err-bg); color: var(--lv-err); }
   .kpi-delta.flat { background: var(--lv-info-bg); color: var(--lv-info); }
+  .kpi-sub {
+    font-size: 10px;
+    color: var(--lv-muted-2);
+    margin-top: 1px;
+  }
 
   /* Two-column layout: heatmap + agentic reviewer */
   .two-col {
@@ -364,17 +373,20 @@
     color: var(--lv-muted);
     margin-top: 2px;
   }
-  .panel-controls { display: flex; gap: 6px; flex-wrap: wrap; }
+  .panel-controls { display: flex; gap: 5px; flex-wrap: wrap; }
+  .panel-controls.one-line { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .panel-controls.one-line::-webkit-scrollbar { height: 0; }
   .pill-btn {
-    padding: 5px 10px;
+    padding: 3px 8px;
     border-radius: 999px;
     border: 1px solid var(--lv-border);
     background: var(--lv-surface-2);
     color: var(--lv-muted);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
   }
   .pill-btn:hover { color: var(--lv-text); border-color: var(--lv-border-2); }
   .pill-btn.active { background: var(--lv-navy); border-color: var(--lv-navy); color: #fff; }
@@ -386,9 +398,9 @@
   }
   .heatmap-grid {
     display: grid;
-    grid-template-columns: 200px repeat(var(--cols), minmax(72px, 1fr)) 88px;
-    gap: 4px;
-    min-width: 760px;
+    grid-template-columns: 180px repeat(var(--cols), minmax(56px, 1fr)) 108px;
+    gap: 3px;
+    min-width: 800px;
     align-items: stretch;
   }
   .hm-corner {
@@ -416,6 +428,15 @@
     font-size: 13px;
     font-weight: 600;
     color: var(--lv-text);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    position: relative;
+    transition: background 0.15s;
+  }
+  .hm-row-label:hover { background: var(--lv-surface-2); }
+  .hm-row-label.pinned {
+    background: var(--lv-green-bg);
+    box-shadow: inset 3px 0 0 0 var(--lv-green);
   }
   .hm-row-icon {
     width: 22px; height: 22px;
@@ -427,13 +448,42 @@
     font-size: 12px;
     flex-shrink: 0;
   }
-  .hm-row-name { line-height: 1.2; }
+  .hm-row-label.pinned .hm-row-icon {
+    background: var(--lv-green);
+    color: #fff;
+  }
+  .hm-row-name { line-height: 1.2; flex: 1; min-width: 0; }
   .hm-row-name .sub {
     display: block;
     font-size: 10px;
     color: var(--lv-muted);
     font-weight: 500;
     margin-top: 1px;
+  }
+  .pin-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 6px;
+    background: var(--lv-green);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 3px;
+    margin-left: 6px;
+  }
+  .pin-chip-x {
+    cursor: pointer;
+    opacity: 0.85;
+    padding: 0 1px;
+  }
+  .pin-chip-x:hover { opacity: 1; }
+  .hm-cell.pinned-row {
+    outline: 2px solid var(--lv-green);
+    outline-offset: -1px;
+    z-index: 1;
   }
   .hm-cell {
     border-radius: var(--radius-sm);
@@ -474,18 +524,21 @@
     flex-direction: column;
     justify-content: center;
     align-items: flex-end;
-    padding: 0 12px 0 8px;
+    padding: 0 6px 0 6px;
     border-left: 1px solid var(--lv-border);
+    overflow: hidden;
   }
   .hm-row-total .v {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--lv-text);
+    white-space: nowrap;
   }
   .hm-row-total .d {
     font-size: 10px;
     margin-top: 2px;
     font-weight: 600;
+    white-space: nowrap;
   }
   .hm-row-total .d.up { color: var(--lv-green-dark); }
   .hm-row-total .d.down { color: var(--lv-err); }
@@ -597,6 +650,11 @@
   .agent-item.predict { border-left: 3px solid var(--lv-purple); }
   .agent-item.alert { border-left: 3px solid var(--lv-err); }
   .agent-item.observation { border-left: 3px solid var(--lv-green); }
+  .agent-item.action_plan {
+    border-left: 3px solid var(--lv-purple);
+    background: linear-gradient(180deg, var(--lv-purple-bg), var(--lv-surface));
+    padding: 12px 14px;
+  }
 
   .agent-item-head {
     display: flex;
@@ -617,6 +675,136 @@
   .agent-tag.predict { background: var(--lv-purple-bg); color: var(--lv-purple); }
   .agent-tag.alert { background: var(--lv-err-bg); color: var(--lv-err); }
   .agent-tag.observation { background: var(--lv-green-bg); color: var(--lv-green-dark); }
+  .agent-tag.action_plan { background: var(--lv-navy); color: #fff; }
+
+  /* Action Plan card */
+  .ap-summary { font-size: 13px; color: var(--lv-text-2); line-height: 1.5; margin-bottom: 10px; }
+  .ap-section { margin-top: 10px; }
+  .ap-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--lv-muted);
+    margin-bottom: 6px;
+  }
+  .ap-action {
+    display: flex;
+    gap: 8px;
+    padding: 7px 0;
+    border-top: 1px dashed var(--lv-border);
+  }
+  .ap-action:first-of-type { border-top: none; padding-top: 0; }
+  .ap-action-num {
+    flex-shrink: 0;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--lv-navy);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ap-action-body { flex: 1; min-width: 0; }
+  .ap-action-title { font-size: 12px; font-weight: 600; color: var(--lv-text); margin-bottom: 2px; }
+  .ap-action-why { font-size: 11px; color: var(--lv-muted); line-height: 1.4; }
+  .ap-action-owner {
+    display: inline-block;
+    margin-top: 3px;
+    font-size: 10px;
+    color: var(--lv-info);
+    background: var(--lv-info-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .ap-investigate {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .ap-investigate-chip {
+    background: var(--lv-surface-3);
+    color: var(--lv-text-2);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--lv-border);
+  }
+  .ap-candidate {
+    padding: 6px 8px;
+    background: var(--lv-surface-2);
+    border: 1px solid var(--lv-border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 4px;
+    font-size: 11px;
+  }
+  .ap-candidate-name { font-weight: 600; color: var(--lv-text); }
+  .ap-candidate-bn { color: var(--lv-muted-2); font-family: 'SF Mono', monospace; font-size: 10px; }
+  .ap-candidate-why { color: var(--lv-muted); margin-top: 2px; }
+  .ap-forecast {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--lv-surface-2);
+    border-radius: var(--radius-sm);
+  }
+  .ap-forecast-band {
+    flex: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--lv-muted);
+  }
+  .ap-forecast-band strong {
+    font-size: 14px;
+    color: var(--lv-purple);
+    font-weight: 700;
+  }
+  .ap-meta {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--lv-border);
+    font-size: 10px;
+    color: var(--lv-muted-2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .ap-fallback-tag {
+    background: var(--lv-warn-bg);
+    color: var(--lv-warn);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 700;
+  }
+
+  /* Generate Action Plan button (when pinned) */
+  .ap-cta {
+    display: block;
+    width: 100%;
+    padding: 9px 12px;
+    background: linear-gradient(135deg, var(--lv-navy), var(--lv-navy-3));
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 10px;
+    text-align: left;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .ap-cta:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .ap-cta:disabled { opacity: 0.6; cursor: progress; }
+  .ap-cta .small { display: block; font-weight: 500; opacity: 0.85; font-size: 10px; margin-top: 2px; }
   .agent-time { font-size: 10px; color: var(--lv-muted-2); }
   .agent-body { font-size: 13px; color: var(--lv-text-2); line-height: 1.5; }
   .agent-body strong { color: var(--lv-text); font-weight: 700; }
@@ -648,10 +836,25 @@
     font-size: 13px;
   }
 
+  /* Demonstration disclosure box (footer-area) */
+  .demo-ribbon {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--lv-warn-bg);
+    border: 1px solid rgba(217,119,6,0.25);
+    border-radius: var(--radius-md);
+    color: var(--lv-text-2);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .demo-ribbon strong { color: var(--lv-warn); }
+
   /* Footer */
   .app-footer {
-    margin-top: 32px;
-    padding-top: 16px;
+    margin-top: 16px;
+    padding-top: 14px;
     border-top: 1px solid var(--lv-border);
     color: var(--lv-muted);
     font-size: 12px;
@@ -695,53 +898,51 @@
 
   <div class="app">
 
-    <!-- Page header -->
+    <!-- Compact page header (single line) -->
     <div class="page-header">
-      <div class="page-title">
+      <div class="page-title-line">
         <h1>Realtime Funding Heatmap</h1>
-        <p class="subtitle">Cross-dataset view of where public dollars are landing — by vertical, by quarter. CRA T3010, federal grants &amp; contributions, and Alberta open data unified into one intensity grid, with an agentic reviewer watching for trend shifts and concentration risk.</p>
+        <span class="lede">Public dollars by vertical, by quarter — CRA · Federal · Alberta unified.</span>
+        <span class="demo-chip" title="Vertical totals, quarterly cells, and agent recommendations are illustrative. Realtime ticks are simulated for demo purposes. Underlying platform aggregates 851K resolved entities and ~12.2M source rows.">⚠ Demo</span>
       </div>
       <span class="live-indicator" :class="{paused: !running}">
         <span class="dot"></span>
-        <span>{{ running ? `LIVE · updated ${lastUpdate}` : 'Paused' }}</span>
+        <span>{{ running ? `LIVE · ${lastUpdate}` : 'Paused' }}</span>
       </span>
     </div>
 
-    <!-- Demo ribbon -->
-    <div class="demo-ribbon" role="note">
-      <span aria-hidden="true">⚠️</span>
-      <div>
-        <strong>Demonstration build.</strong> Vertical totals, quarterly cells, and agent recommendations shown below are illustrative. The underlying platform aggregates over 851K resolved entities and ~12.2M source rows from CRA, federal, and Alberta open data. Realtime ticks here are simulated for demo purposes.
-      </div>
-    </div>
-
-    <!-- KPI strip -->
+    <!-- Compact KPI strip -->
     <div class="kpi-strip">
       <div class="kpi-card">
-        <div class="kpi-label">Public Funding Tracked</div>
-        <div class="kpi-value">${{ formatBn(kpi.totalAll) }}B</div>
-        <div class="kpi-sub">Last 8 quarters · all verticals</div>
-        <span class="kpi-delta up">▲ {{ kpi.totalDelta.toFixed(1) }}% QoQ</span>
+        <div class="kpi-label">Tracked · 8q</div>
+        <div class="kpi-row">
+          <span class="kpi-value">${{ formatBn(kpi.totalAll) }}B</span>
+          <span class="kpi-delta up">▲ {{ kpi.totalDelta.toFixed(1) }}%</span>
+        </div>
       </div>
       <div class="kpi-card amber">
         <div class="kpi-label">Hottest Cell</div>
-        <div class="kpi-value" style="font-size:18px;">{{ kpi.hottest.vertical }}</div>
-        <div class="kpi-sub">{{ kpi.hottest.quarter }} · ${{ formatM(kpi.hottest.amount) }}M</div>
-        <span class="kpi-delta up">▲ flagged for concentration</span>
+        <div class="kpi-row">
+          <span class="kpi-value text">{{ kpi.hottest.vertical }}</span>
+          <span class="kpi-delta up">${{ formatM(kpi.hottest.amount) }}M</span>
+        </div>
+        <div class="kpi-sub">{{ kpi.hottest.quarter }}</div>
       </div>
       <div class="kpi-card purple">
-        <div class="kpi-label">Fastest-Growing Vertical</div>
-        <div class="kpi-value" style="font-size:18px;">{{ kpi.growing.vertical }}</div>
-        <div class="kpi-sub">{{ kpi.growing.delta.toFixed(1) }}% growth over window</div>
-        <span class="kpi-delta up">▲ {{ kpi.growing.deltaQoQ.toFixed(1) }}% QoQ</span>
+        <div class="kpi-label">Fastest-Growing</div>
+        <div class="kpi-row">
+          <span class="kpi-value text">{{ kpi.growing.vertical }}</span>
+          <span class="kpi-delta up">▲ {{ kpi.growing.deltaQoQ.toFixed(1) }}% QoQ</span>
+        </div>
       </div>
       <div class="kpi-card blue">
-        <div class="kpi-label">Predicted Next Quarter</div>
-        <div class="kpi-value">${{ formatBn(kpi.nextQuarter) }}B</div>
-        <div class="kpi-sub">Agent forecast · {{ kpi.nextLabel }}</div>
-        <span class="kpi-delta" :class="kpi.nextDelta >= 0 ? 'up' : 'down'">
-          {{ kpi.nextDelta >= 0 ? '▲' : '▼' }} {{ Math.abs(kpi.nextDelta).toFixed(1) }}% projected
-        </span>
+        <div class="kpi-label">Predicted {{ kpi.nextLabel }}</div>
+        <div class="kpi-row">
+          <span class="kpi-value">${{ formatBn(kpi.nextQuarter) }}B</span>
+          <span class="kpi-delta" :class="kpi.nextDelta >= 0 ? 'up' : 'down'">
+            {{ kpi.nextDelta >= 0 ? '▲' : '▼' }} {{ Math.abs(kpi.nextDelta).toFixed(1) }}%
+          </span>
+        </div>
       </div>
     </div>
 
@@ -771,18 +972,21 @@
             <div class="hm-corner" style="text-align:right;">Total · QoQ</div>
 
             <template v-for="row in heatRows" :key="row.vertical">
-              <div class="hm-row-label" :class="{pinned: pinned === row.vertical}" @click="pinVertical(row.vertical)">
-                <div class="hm-row-icon" :style="{ background: row.tint }">{{ row.icon }}</div>
+              <div class="hm-row-label" :class="{pinned: pinned === row.vertical}" @click="pinVertical(row.vertical)" :title="pinned === row.vertical ? 'Click to unpin' : 'Click to pin'">
+                <div class="hm-row-icon" :style="{ background: pinned === row.vertical ? '' : row.tint }">{{ row.icon }}</div>
                 <div class="hm-row-name">
                   {{ row.vertical }}
                   <span class="sub">{{ row.tag }}</span>
                 </div>
+                <span v-if="pinned === row.vertical" class="pin-chip" @click.stop="pinVertical(row.vertical)">
+                  Pinned <span class="pin-chip-x">×</span>
+                </span>
               </div>
               <div
                 v-for="(cell, qi) in row.cells"
                 :key="'c-'+row.vertical+'-'+qi"
                 class="hm-cell"
-                :class="['lvl-' + cell.level, { tick: cell.ticked }]"
+                :class="['lvl-' + cell.level, { tick: cell.ticked, 'pinned-row': pinned === row.vertical }]"
                 @mouseenter="showTip($event, row, quarters[qi], cell)"
                 @mousemove="moveTip"
                 @mouseleave="hideTip"
@@ -825,11 +1029,18 @@
           </div>
         </div>
 
-        <div class="panel-controls" style="margin-bottom:10px;">
+        <button v-if="pinned" class="ap-cta" @click="generateActionPlan" :disabled="actionPlanLoading">
+          <span v-if="actionPlanLoading">⏳ Drafting plan for {{ pinned }}…</span>
+          <span v-else>🎯 Generate Action Plan for {{ pinned }} →</span>
+          <span class="small">{{ actionPlanLoading ? 'Model reasoning over the vertical trajectory + recent signals' : 'Model produces a structured plan with owners and forecasts' }}</span>
+        </button>
+
+        <div class="panel-controls one-line" style="margin-bottom:10px;">
           <button class="pill-btn" :class="{active: filter==='all'}" @click="filter='all'">All</button>
+          <button class="pill-btn" :class="{active: filter==='action_plan'}" @click="filter='action_plan'">Plans</button>
           <button class="pill-btn" :class="{active: filter==='alert'}" @click="filter='alert'">Alerts</button>
-          <button class="pill-btn" :class="{active: filter==='predict'}" @click="filter='predict'">Predictions</button>
-          <button class="pill-btn" :class="{active: filter==='recommend'}" @click="filter='recommend'">Recommendations</button>
+          <button class="pill-btn" :class="{active: filter==='predict'}" @click="filter='predict'">Predict</button>
+          <button class="pill-btn" :class="{active: filter==='recommend'}" @click="filter='recommend'">Recs</button>
         </div>
 
         <div class="agent-feed">
@@ -841,15 +1052,78 @@
               <span class="agent-tag" :class="item.kind">{{ item.label }}</span>
               <span class="agent-time">{{ item.timeLabel }}</span>
             </div>
-            <div class="agent-body" v-html="item.html"></div>
-            <div v-if="item.confidence != null" class="agent-confidence">
-              <span>Confidence</span>
-              <div class="conf-bar"><div class="conf-fill" :style="{ width: item.confidence + '%' }"></div></div>
-              <span>{{ item.confidence }}%</span>
-            </div>
+
+            <!-- Standard signal -->
+            <template v-if="item.kind !== 'action_plan'">
+              <div class="agent-body" v-html="item.html"></div>
+              <div v-if="item.confidence != null" class="agent-confidence">
+                <span>Confidence</span>
+                <div class="conf-bar"><div class="conf-fill" :style="{ width: item.confidence + '%' }"></div></div>
+                <span>{{ item.confidence }}%</span>
+              </div>
+            </template>
+
+            <!-- Structured action plan -->
+            <template v-else>
+              <div style="font-size:13px; font-weight:700; color:var(--lv-text); margin-bottom:6px;">
+                🎯 {{ item.plan.vertical }}
+              </div>
+              <div class="ap-summary">{{ item.plan.summary }}</div>
+
+              <div class="ap-section">
+                <div class="ap-section-title">Top actions</div>
+                <div v-for="(a, idx) in item.plan.top_actions" :key="'ap-a-'+idx" class="ap-action">
+                  <div class="ap-action-num">{{ idx + 1 }}</div>
+                  <div class="ap-action-body">
+                    <div class="ap-action-title">{{ a.title }}</div>
+                    <div class="ap-action-why">{{ a.why }}</div>
+                    <span class="ap-action-owner">{{ a.owner }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ap-section" v-if="item.plan.investigate_next && item.plan.investigate_next.length">
+                <div class="ap-section-title">Investigate next</div>
+                <div class="ap-investigate">
+                  <span v-for="(q, idx) in item.plan.investigate_next" :key="'ap-q-'+idx" class="ap-investigate-chip">{{ q }}</span>
+                </div>
+              </div>
+
+              <div class="ap-section" v-if="item.plan.dossier_candidates && item.plan.dossier_candidates.length">
+                <div class="ap-section-title">Dossier candidates · illustrative</div>
+                <div v-for="(c, idx) in item.plan.dossier_candidates" :key="'ap-c-'+idx" class="ap-candidate">
+                  <div><span class="ap-candidate-name">{{ c.name }}</span> <span class="ap-candidate-bn">BN {{ c.bn }}</span></div>
+                  <div class="ap-candidate-why">{{ c.why }}</div>
+                </div>
+              </div>
+
+              <div class="ap-section" v-if="item.plan.forecast_band">
+                <div class="ap-section-title">Forecast · next quarter</div>
+                <div class="ap-forecast">
+                  <div class="ap-forecast-band">
+                    <span>low ${{ formatM(item.plan.forecast_band.low) }}M</span>
+                    <strong>${{ formatM(item.plan.forecast_band.mid) }}M</strong>
+                    <span>high ${{ formatM(item.plan.forecast_band.high) }}M</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ap-meta">
+                <span>{{ item.plan.model_label }} · {{ item.plan.latency_ms }}ms · {{ item.plan.cache_hits }}</span>
+                <span v-if="item.plan.fallback" class="ap-fallback-tag">FALLBACK</span>
+              </div>
+            </template>
           </div>
         </div>
       </aside>
+    </div>
+
+    <!-- Demonstration disclosure (proper box, near footer) -->
+    <div class="demo-ribbon" role="note" style="margin-top:24px;">
+      <span aria-hidden="true">⚠️</span>
+      <div>
+        <strong>Demonstration build.</strong> Vertical totals, quarterly cells, and agent recommendations shown above are illustrative. The underlying platform aggregates over 851K resolved entities and ~12.2M source rows from CRA, federal, and Alberta open data. Realtime ticks here are simulated for demo purposes; action plans are generated by the model against the simulated trajectory + recent agent signals.
+      </div>
     </div>
 
     <footer class="app-footer">
@@ -959,8 +1233,16 @@ createApp({
     let timer = null;
     let clockTimer = null;
 
+    const actionPlanLoading = ref(false);
+
     function pushSignal(kind, html, vertical, confidence) {
-      const labels = { observation: 'OBSERVATION', predict: 'PREDICTION', alert: 'ALERT', recommend: 'RECOMMENDATION' };
+      const labels = {
+        observation: 'OBSERVATION',
+        predict: 'PREDICTION',
+        alert: 'ALERT',
+        recommend: 'RECOMMENDATION',
+        action_plan: 'ACTION PLAN'
+      };
       feed.value.unshift({
         id: ++feedSeq,
         kind,
@@ -971,8 +1253,101 @@ createApp({
         ts: Date.now(),
         timeLabel: 'just now'
       });
-      // Cap feed at 30
       if (feed.value.length > 30) feed.value.length = 30;
+    }
+
+    function pushActionPlan(plan) {
+      feed.value.unshift({
+        id: ++feedSeq,
+        kind: 'action_plan',
+        label: 'ACTION PLAN',
+        plan,
+        ts: Date.now(),
+        timeLabel: 'just now'
+      });
+      if (feed.value.length > 30) feed.value.length = 30;
+    }
+
+    async function generateActionPlan() {
+      if (!pinned.value || actionPlanLoading.value) return;
+      actionPlanLoading.value = true;
+
+      // Snapshot the current state for the LLM
+      const row = data.find(d => d.vertical === pinned.value);
+      if (!row) { actionPlanLoading.value = false; return; }
+
+      const recentSignals = feed.value
+        .filter(s => s.kind !== 'action_plan')
+        .slice(0, 6)
+        .map(s => ({
+          kind: s.kind,
+          body: (s.html || '').replace(/<[^>]+>/g, ''),
+          vertical: s.vertical || null
+        }));
+
+      const payload = {
+        vertical: pinned.value,
+        quarters: QUARTERS,
+        amounts: row.amounts.slice(),
+        source_filter: source.value,
+        recent_signals: recentSignals
+      };
+
+      const startedAt = performance.now();
+      let plan = null;
+      try {
+        const res = await fetch('/api/action-plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('action-plan ' + res.status);
+        plan = await res.json();
+      } catch (e) {
+        // Client-side fallback (server unreachable)
+        plan = clientSideFallbackPlan(payload);
+      }
+
+      const latency = Math.round(performance.now() - startedAt);
+      plan.vertical = plan.vertical || pinned.value;
+      plan.latency_ms = latency;
+      plan.model_label = plan.model_label || (plan.fallback ? 'fallback (template)' : 'model');
+      plan.cache_hits = plan.cache_hits || (plan.fallback ? '—' : 'first call');
+      pushActionPlan(plan);
+
+      actionPlanLoading.value = false;
+      filter.value = 'action_plan';
+    }
+
+    function clientSideFallbackPlan({ vertical, quarters, amounts, source_filter }) {
+      const last = amounts[amounts.length - 1];
+      const prev = amounts[amounts.length - 2] || last;
+      const pct = ((last - prev) / Math.max(1, prev)) * 100;
+      const pred = Math.round(last * (1 + (pct / 100) * 0.6));
+      const sourceLabel = source_filter === 'all' ? 'all sources' : source_filter.toUpperCase();
+      return {
+        vertical,
+        summary: `${vertical} most recent quarter at $${last}M (${pct >= 0 ? '+' : ''}${pct.toFixed(1)}% QoQ). The ${sourceLabel} view shows a ${pct > 5 ? 'sharp upward' : pct < -5 ? 'declining' : 'stable'} trajectory across the last 8 quarters.`,
+        top_actions: [
+          { title: `Audit top recipients in ${vertical}`, why: `${last}M deployed last quarter — drill into the top 10 recipients via the Dossier Explorer and check overhead ratios.`, owner: 'Program Evaluator' },
+          { title: 'Cross-reference recent agent alerts', why: 'Two or more flags in this vertical over the last 8 quarters warrant a focused review.', owner: 'Risk Analyst' },
+          { title: 'Review concentration vs benchmark', why: 'Compare this vertical’s share of total funding against multi-year baselines to spot anomalies.', owner: 'Procurement Audit Lead' }
+        ],
+        investigate_next: [
+          `Top 10 recipients in ${vertical} ranked by overhead ratio`,
+          'Cross-dataset dual-funding (CRA + AB sole-source) within this vertical',
+          'Year-over-year amendment creep on federal grants in this vertical'
+        ],
+        dossier_candidates: [],
+        forecast_band: {
+          low: Math.max(8, Math.round(pred * 0.9)),
+          mid: pred,
+          high: Math.round(pred * 1.1)
+        },
+        fallback: true,
+        model_label: 'fallback (template)',
+        cache_hits: '—'
+      };
     }
 
     function updateTimeLabels() {
@@ -1214,7 +1589,8 @@ createApp({
     return {
       dark, running, source, filter, pinned, lastUpdate, tickIntervalMs, tooltip,
       heatRows, totalCells, quarters: QUARTERS, kpi, feed, filteredFeed, tip, tipOn,
-      toggleTheme, setSource, pinVertical,
+      actionPlanLoading,
+      toggleTheme, setSource, pinVertical, generateActionPlan,
       showTip, moveTip, hideTip,
       formatM, formatBn, formatCell
     };

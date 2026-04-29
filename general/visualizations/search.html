@@ -376,6 +376,48 @@
 
   /* ─── Results meta ─────────────────────────────────────────────────── */
   .results-section { margin-top: 8px; }
+
+  /* Two-column comparison: best on the left, worst on the right */
+  .results-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 12px;
+  }
+  @media (max-width: 900px) {
+    .results-columns { grid-template-columns: 1fr; }
+  }
+  .col-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .col-header.best  { background: var(--lv-green-bg); color: var(--lv-green-dark); border: 1px solid rgba(45,168,44,0.25); }
+  .col-header.worst { background: var(--lv-err-bg);   color: var(--lv-err);        border: 1px solid var(--lv-err-border); }
+  .col-header .col-count {
+    margin-left: auto;
+    font-weight: 500;
+    color: var(--lv-muted);
+    font-size: 11px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .col-empty {
+    padding: 14px;
+    color: var(--lv-muted);
+    font-size: 13px;
+    background: var(--lv-surface-2);
+    border: 1px dashed var(--lv-border);
+    border-radius: 8px;
+    text-align: center;
+  }
   .results-meta {
     display: flex;
     align-items: center;
@@ -896,83 +938,47 @@
       <div class="sql-box" v-if="showSql">
         <span class="sql-note">Demonstration query · the underlying platform supports natural-language to SQL via Claude with read-only safety wrappers.</span>{{ meta.sql_generated }}</div>
 
-      <!-- Cards -->
-      <article v-for="r in results" :key="r.id" class="result-card" :class="cardClass()">
-
-        <div class="card-top">
-          <div class="card-icon-bubble" :class="cardClass()" aria-hidden="true">{{ cardIcon(r) }}</div>
-          <div class="card-id">
-            <div class="card-name">{{ r.canonical_name }}</div>
-            <div class="card-meta-row">
-              <span>BN {{ r.bn_root }}</span>
-              <span>
-                <span v-for="src in r.dataset_sources" :key="src" class="source-pill" :class="src">
-                  {{ src.toUpperCase() }}
-                </span>
-              </span>
-            </div>
+      <!-- Two-column ranking: best on the left, worst on the right -->
+      <div class="results-columns">
+        <div class="col-best-wrap">
+          <div class="col-header best">
+            <span aria-hidden="true">🏆</span>
+            <span>{{ meta.mode === 'good_actor' ? 'Honor Roll · best first' : 'Lower Risk · best in cohort' }}</span>
+            <span class="col-count">{{ bestColumn.length }} of {{ results.length }}</span>
           </div>
-          <div class="score-badge" :class="scoreBadgeClass(r)">
-            {{ r.score }}/{{ r.score_max }} · {{ r.score_label }}
+          <result-card
+            v-for="r in bestColumn" :key="'b-'+r.id"
+            :r="r"
+            :card-class="cardClass()"
+            :card-icon="cardIcon(r)"
+            :score-badge-class="scoreBadgeClass(r)"
+            :web-intel="webIntel"
+            :web-intel-open="webIntelOpen"
+            :web-intel-loading="webIntelLoading"
+            @toggle-web-intel="toggleWebIntel"
+          ></result-card>
+          <div v-if="bestColumn.length === 0" class="col-empty">No matches in this column.</div>
+        </div>
+        <div class="col-worst-wrap">
+          <div class="col-header worst">
+            <span aria-hidden="true">⚠️</span>
+            <span>{{ meta.mode === 'good_actor' ? 'Lowest Efficiency · worst first' : 'Highest Risk · worst first' }}</span>
+            <span class="col-count">{{ worstColumn.length }} of {{ results.length }}</span>
           </div>
+          <result-card
+            v-for="r in worstColumn" :key="'w-'+r.id"
+            :r="r"
+            :card-class="cardClass()"
+            :card-icon="cardIcon(r)"
+            :score-badge-class="scoreBadgeClass(r)"
+            :web-intel="webIntel"
+            :web-intel-open="webIntelOpen"
+            :web-intel-loading="webIntelLoading"
+            @toggle-web-intel="toggleWebIntel"
+          ></result-card>
+          <div v-if="worstColumn.length === 0" class="col-empty">Single-card result · shown on the left.</div>
         </div>
-
-        <div class="policy-pulse" :class="r.policy_pulse.alignment" v-if="r.policy_pulse">
-          <span class="pp-badge">
-            {{ r.policy_pulse.alignment === 'aligned' ? '🟢 Policy Aligned' :
-               r.policy_pulse.alignment === 'misaligned' ? '🔴 Funding Risk' : '🟡 Monitor' }}
-          </span>
-          <span>
-            <span class="pp-area">{{ r.policy_pulse.priority_area }}</span>
-            <span class="pp-note"> — {{ r.policy_pulse.policy_note }}</span>
-          </span>
-        </div>
-
-        <div class="card-narrative">{{ r.narrative }}</div>
-
-        <div class="card-flags">
-          <span v-for="flag in r.flags" :key="flag" class="flag-pill" :class="flagClass(flag)">
-            <span aria-hidden="true">{{ flagIcon() }}</span> {{ flag }}
-          </span>
-        </div>
-
-        <div class="card-actions">
-          <button class="action-btn"
-                  @click="toggleWebIntel(r)"
-                  :disabled="webIntelLoading[r.id]"
-                  :aria-expanded="!!webIntelOpen[r.id]">
-            <span v-if="webIntelLoading[r.id]"><span class="spin"></span> Searching</span>
-            <span v-else-if="webIntel[r.id]">🌐 {{ webIntelOpen[r.id] ? 'Hide' : 'Show' }} web intelligence</span>
-            <span v-else>🌐 Check web intelligence</span>
-          </button>
-          <a class="action-btn primary" :href="'dossier.html?id=' + r.id" target="_blank" rel="noopener noreferrer">
-            View full dossier →
-          </a>
-        </div>
-
-        <!-- Web Intel Panel -->
-        <div class="web-intel-panel" v-if="webIntel[r.id] && webIntelOpen[r.id]">
-          <h4>🌐 Web Intelligence Report <span style="font-weight:500; color:var(--lv-muted-2); text-transform:none; letter-spacing:0;">· demonstration content</span></h4>
-          <div class="registry">🏛 Registry: {{ webIntel[r.id].registry_status }}</div>
-
-          <div class="news-item" v-for="item in webIntel[r.id].news_mentions" :key="item.headline" :class="item.sentiment">
-            <span class="news-icon"></span>
-            <div class="news-body">
-              <div class="news-headline">{{ item.headline }}</div>
-              <div class="news-source">{{ item.source }} · {{ item.date }}</div>
-            </div>
-          </div>
-
-          <div class="web-flags">
-            <div v-for="flag in webIntel[r.id].red_flags_found" :key="flag" class="web-flag bad">🚩 {{ flag }}</div>
-            <div v-for="sig in webIntel[r.id].positive_signals" :key="sig" class="web-flag good">✅ {{ sig }}</div>
-          </div>
-
-          <div class="web-summary" v-if="webIntel[r.id].web_summary">
-            "{{ webIntel[r.id].web_summary }}"
-          </div>
-        </div>
-      </article>
+      </div>
 
     </div>
     <!-- end results -->
@@ -984,8 +990,86 @@
   </div>
 </div>
 
+<!-- result-card component template (lives outside #app so Vue's root compiler doesn't pick it up) -->
+<template id="result-card-tmpl">
+  <article class="result-card" :class="cardClass">
+    <div class="card-top">
+      <div class="card-icon-bubble" :class="cardClass" aria-hidden="true">{{ cardIcon }}</div>
+      <div class="card-id">
+        <div class="card-name">{{ r.canonical_name }}</div>
+        <div class="card-meta-row">
+          <span>BN {{ r.bn_root }}</span>
+          <span>
+            <span v-for="src in r.dataset_sources" :key="src" class="source-pill" :class="src">
+              {{ src.toUpperCase() }}
+            </span>
+          </span>
+        </div>
+      </div>
+      <div class="score-badge" :class="scoreBadgeClass">
+        {{ r.score }}/{{ r.score_max }} · {{ r.score_label }}
+      </div>
+    </div>
+
+    <div class="policy-pulse" :class="r.policy_pulse.alignment" v-if="r.policy_pulse">
+      <span class="pp-badge">
+        {{ r.policy_pulse.alignment === 'aligned' ? '🟢 Policy Aligned' :
+           r.policy_pulse.alignment === 'misaligned' ? '🔴 Funding Risk' : '🟡 Monitor' }}
+      </span>
+      <span>
+        <span class="pp-area">{{ r.policy_pulse.priority_area }}</span>
+        <span class="pp-note"> — {{ r.policy_pulse.policy_note }}</span>
+      </span>
+    </div>
+
+    <div class="card-narrative">{{ r.narrative }}</div>
+
+    <div class="card-flags">
+      <span v-for="flag in r.flags" :key="flag" class="flag-pill" :class="flagClassFor(flag)">
+        <span aria-hidden="true">{{ flagIconStr }}</span> {{ flag }}
+      </span>
+    </div>
+
+    <div class="card-actions">
+      <button class="action-btn"
+              @click="$emit('toggle-web-intel', r)"
+              :disabled="webIntelLoading[r.id]"
+              :aria-expanded="!!webIntelOpen[r.id]">
+        <span v-if="webIntelLoading[r.id]"><span class="spin"></span> Searching</span>
+        <span v-else-if="webIntel[r.id]">🌐 {{ webIntelOpen[r.id] ? 'Hide' : 'Show' }} web intelligence</span>
+        <span v-else>🌐 Check web intelligence</span>
+      </button>
+      <a class="action-btn primary" :href="'dossier.html?id=' + r.id" target="_blank" rel="noopener noreferrer">
+        View full dossier →
+      </a>
+    </div>
+
+    <div class="web-intel-panel" v-if="webIntel[r.id] && webIntelOpen[r.id]">
+      <h4>🌐 Web Intelligence Report <span style="font-weight:500; color:var(--lv-muted-2); text-transform:none; letter-spacing:0;">· demonstration content</span></h4>
+      <div class="registry">🏛 Registry: {{ webIntel[r.id].registry_status }}</div>
+
+      <div class="news-item" v-for="item in webIntel[r.id].news_mentions" :key="item.headline" :class="item.sentiment">
+        <span class="news-icon"></span>
+        <div class="news-body">
+          <div class="news-headline">{{ item.headline }}</div>
+          <div class="news-source">{{ item.source }} · {{ item.date }}</div>
+        </div>
+      </div>
+
+      <div class="web-flags">
+        <div v-for="flag in webIntel[r.id].red_flags_found" :key="flag" class="web-flag bad">🚩 {{ flag }}</div>
+        <div v-for="sig in webIntel[r.id].positive_signals" :key="sig" class="web-flag good">✅ {{ sig }}</div>
+      </div>
+
+      <div class="web-summary" v-if="webIntel[r.id].web_summary">
+        "{{ webIntel[r.id].web_summary }}"
+      </div>
+    </div>
+  </article>
+</template>
+
 <script>
-const { createApp, ref, reactive, nextTick } = Vue;
+const { createApp, ref, reactive, computed, nextTick } = Vue;
 
 const EXAMPLE_CHIPS = [
   { label: 'Environmental charities with circular funding', type: 'bad' },
@@ -995,7 +1079,34 @@ const EXAMPLE_CHIPS = [
   { label: 'Federal + Alberta sole-source dual recipients', type: 'cross' },
 ];
 
-createApp({
+// Component used inside both the Best and Worst columns. Defined here so the
+// markup lives in one place and stays in sync across both columns.
+const ResultCard = {
+  template: '#result-card-tmpl',
+  props: {
+    r: { type: Object, required: true },
+    cardClass: { type: String, default: '' },
+    cardIcon: { type: String, default: '' },
+    scoreBadgeClass: { type: String, default: '' },
+    webIntel: { type: Object, default: () => ({}) },
+    webIntelOpen: { type: Object, default: () => ({}) },
+    webIntelLoading: { type: Object, default: () => ({}) }
+  },
+  emits: ['toggle-web-intel'],
+  computed: {
+    flagIconStr() { return this.cardClass === 'good' ? '✅' : '🚩'; }
+  },
+  methods: {
+    flagClassFor(flag) {
+      if (this.cardClass === 'good') return 'good';
+      if (this.cardClass === 'bad') return 'bad';
+      if (/\$|funding|grants|revenue|federal|ab/i.test(flag)) return 'neutral';
+      return 'bad';
+    }
+  }
+};
+
+const app = createApp({
   setup() {
     const dark = ref(false);
     const query = ref('');
@@ -1143,16 +1254,42 @@ createApp({
       window.print();
     }
 
+    // Two-column ranking: left = best (lowest risk / highest efficiency),
+    // right = worst (highest risk / lowest efficiency). Each entity appears
+    // in only one column so 10 results → 5 best + 5 worst, 9 → 5 + 4, etc.
+    function bestComparator(a, b) {
+      // For good_actor mode, score is efficiency (higher = better) → desc.
+      // For bad_actor / mixed, score is risk (lower = better) → asc.
+      if (meta.mode === 'good_actor') return (b.score || 0) - (a.score || 0);
+      return (a.score || 0) - (b.score || 0);
+    }
+    const bestColumn = computed(() => {
+      if (results.value.length < 2) return results.value;
+      const sorted = [...results.value].sort(bestComparator);
+      const half = Math.ceil(sorted.length / 2);
+      return sorted.slice(0, half);
+    });
+    const worstColumn = computed(() => {
+      if (results.value.length < 2) return [];
+      const sorted = [...results.value].sort(bestComparator);
+      const half = Math.ceil(sorted.length / 2);
+      return sorted.slice(half).reverse(); // worst first
+    });
+
     return {
       dark, query, loading, hasSearched, results, meta, showSql, error, searchInput,
       webIntel, webIntelLoading, webIntelOpen,
+      bestColumn, worstColumn,
       EXAMPLE_CHIPS,
       toggleTheme, useChip, search, toggleWebIntel,
       cardClass, cardIcon, scoreBadgeClass, flagClass, flagIcon,
       exportCSV, exportPDF
     };
   }
-}).mount('#app');
+});
+
+app.component('result-card', ResultCard);
+app.mount('#app');
 </script>
 </body>
 </html>

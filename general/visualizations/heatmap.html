@@ -1,0 +1,1236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Funding Heatmap | Long View Systems</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<style>
+  /* ─── Long View Systems design tokens (mirrors search.html) ──────────── */
+  :root {
+    --lv-green: #2da82c;
+    --lv-green-2: #34c134;
+    --lv-green-dark: #1f7d1f;
+    --lv-green-bg: rgba(45, 168, 44, 0.08);
+
+    --lv-navy: #0f2236;
+    --lv-navy-2: #16314a;
+    --lv-navy-3: #1f3d5c;
+
+    --lv-bg: #f5f7fa;
+    --lv-surface: #ffffff;
+    --lv-surface-2: #f9fafc;
+    --lv-surface-3: #f0f3f6;
+
+    --lv-border: #e1e6ed;
+    --lv-border-2: #d0d7de;
+
+    --lv-text: #1a2332;
+    --lv-text-2: #2d3748;
+    --lv-muted: #5c6b7f;
+    --lv-muted-2: #8392a5;
+
+    --lv-warn: #d97706;
+    --lv-warn-bg: rgba(217, 119, 6, 0.08);
+    --lv-err: #dc2626;
+    --lv-err-bg: rgba(220, 38, 38, 0.07);
+    --lv-info: #2563eb;
+    --lv-info-bg: rgba(37, 99, 235, 0.08);
+    --lv-purple: #7c3aed;
+    --lv-purple-bg: rgba(124, 58, 237, 0.08);
+
+    /* Heatmap scale (cool → warm, intensity ramp inspired by the AI Metrics Chart) */
+    --heat-0: #eef2f7;
+    --heat-1: #d6e4f5;
+    --heat-2: #a9c9ec;
+    --heat-3: #7faade;
+    --heat-4: #5089cc;
+    --heat-5: #3766a8;
+    --heat-6: #d97706;
+    --heat-7: #c2410c;
+    --heat-8: #9a1a1a;
+
+    --shadow-sm: 0 1px 2px rgba(15, 30, 46, 0.05);
+    --shadow-md: 0 2px 8px rgba(15, 30, 46, 0.08);
+    --shadow-lg: 0 8px 24px rgba(15, 30, 46, 0.12);
+
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 10px;
+    --radius-xl: 12px;
+  }
+
+  html.dark {
+    --lv-bg: #0a0f15;
+    --lv-surface: #131a23;
+    --lv-surface-2: #1a232f;
+    --lv-surface-3: #232d3a;
+    --lv-border: #2a3441;
+    --lv-border-2: #3a4453;
+    --lv-text: #e6edf3;
+    --lv-text-2: #cdd6df;
+    --lv-muted: #8392a5;
+    --lv-muted-2: #6b7a8d;
+    --heat-0: #1a232f;
+    --heat-1: #1f3050;
+    --heat-2: #234070;
+    --heat-3: #2d5797;
+    --heat-4: #3b73c0;
+    --heat-5: #4d8fdb;
+    --heat-6: #d97706;
+    --heat-7: #ef4444;
+    --heat-8: #f97316;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font: 14px/1.5 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--lv-bg);
+    color: var(--lv-text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input { font-family: inherit; }
+  a { color: inherit; }
+
+  /* Top navigation (matches search.html) */
+  .top-nav {
+    background: var(--lv-navy);
+    color: #fff;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    box-shadow: var(--shadow-md);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.2px;
+  }
+  .brand-logo {
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    background: var(--lv-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .brand-name { color: #fff; }
+  .brand-divider {
+    width: 1px; height: 18px;
+    background: rgba(255,255,255,0.2);
+    margin: 0 4px;
+  }
+  .product-name {
+    color: rgba(255,255,255,0.7);
+    font-weight: 500;
+    font-size: 13px;
+  }
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+    margin-left: 12px;
+  }
+  .nav-tab {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+  }
+  .nav-tab:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .nav-tab.active { background: rgba(45,168,44,0.18); color: var(--lv-green-2); }
+  .nav-spacer { flex: 1; }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .demo-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(217,119,6,0.18);
+    color: #fde9c8;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .demo-pill .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #fbbf24;
+    box-shadow: 0 0 0 0 rgba(251,191,36,0.6);
+    animation: pulse 1.6s ease-out infinite;
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(251,191,36,0.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(251,191,36,0); }
+    100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); }
+  }
+  .icon-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,0.08); }
+  .user-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--lv-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  /* Page layout */
+  .app { max-width: 1320px; margin: 0 auto; padding: 28px 24px 56px; }
+
+  .page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .page-title h1 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--lv-text);
+    margin-bottom: 6px;
+  }
+  .page-title .subtitle {
+    color: var(--lv-muted);
+    font-size: 14px;
+    max-width: 760px;
+  }
+  .live-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--lv-green-bg);
+    border: 1px solid rgba(45,168,44,0.25);
+    border-radius: 999px;
+    color: var(--lv-green-dark);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+  .live-indicator .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--lv-green);
+    box-shadow: 0 0 0 0 rgba(45,168,44,0.6);
+    animation: pulse-green 1.4s ease-out infinite;
+  }
+  @keyframes pulse-green {
+    0%   { box-shadow: 0 0 0 0 rgba(45,168,44,0.55); }
+    70%  { box-shadow: 0 0 0 7px rgba(45,168,44,0); }
+    100% { box-shadow: 0 0 0 0 rgba(45,168,44,0); }
+  }
+  .live-indicator.paused {
+    background: var(--lv-warn-bg);
+    border-color: rgba(217,119,6,0.25);
+    color: var(--lv-warn);
+  }
+  .live-indicator.paused .dot { background: var(--lv-warn); animation: none; }
+
+  /* Demo ribbon */
+  .demo-ribbon {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--lv-warn-bg);
+    border: 1px solid rgba(217,119,6,0.25);
+    border-radius: var(--radius-md);
+    color: var(--lv-text-2);
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+  .demo-ribbon strong { color: var(--lv-warn); }
+
+  /* KPI strip */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .kpi-card {
+    background: var(--lv-surface);
+    border: 1px solid var(--lv-border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--lv-green);
+  }
+  .kpi-card.amber::before { background: var(--lv-warn); }
+  .kpi-card.purple::before { background: var(--lv-purple); }
+  .kpi-card.blue::before { background: var(--lv-info); }
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--lv-muted);
+    margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--lv-text);
+    letter-spacing: -0.4px;
+    line-height: 1.1;
+  }
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--lv-muted);
+    margin-top: 6px;
+  }
+  .kpi-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 6px;
+  }
+  .kpi-delta.up { background: var(--lv-green-bg); color: var(--lv-green-dark); }
+  .kpi-delta.down { background: var(--lv-err-bg); color: var(--lv-err); }
+  .kpi-delta.flat { background: var(--lv-info-bg); color: var(--lv-info); }
+
+  /* Two-column layout: heatmap + agentic reviewer */
+  .two-col {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 18px;
+    align-items: start;
+  }
+  @media (max-width: 1080px) {
+    .two-col { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--lv-surface);
+    border: 1px solid var(--lv-border);
+    border-radius: var(--radius-xl);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .panel-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--lv-text);
+    letter-spacing: -0.1px;
+  }
+  .panel-sub {
+    font-size: 12px;
+    color: var(--lv-muted);
+    margin-top: 2px;
+  }
+  .panel-controls { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill-btn {
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--lv-border);
+    background: var(--lv-surface-2);
+    color: var(--lv-muted);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .pill-btn:hover { color: var(--lv-text); border-color: var(--lv-border-2); }
+  .pill-btn.active { background: var(--lv-navy); border-color: var(--lv-navy); color: #fff; }
+
+  /* Heatmap grid */
+  .heatmap-wrap {
+    overflow-x: auto;
+    padding-top: 4px;
+  }
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: 200px repeat(var(--cols), minmax(72px, 1fr)) 88px;
+    gap: 4px;
+    min-width: 760px;
+    align-items: stretch;
+  }
+  .hm-corner {
+    font-size: 10px;
+    color: var(--lv-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+    padding: 8px 6px;
+    align-self: end;
+  }
+  .hm-col-label {
+    font-size: 11px;
+    color: var(--lv-muted);
+    text-align: center;
+    padding: 8px 4px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--lv-border);
+  }
+  .hm-row-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--lv-text);
+  }
+  .hm-row-icon {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    background: var(--lv-surface-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .hm-row-name { line-height: 1.2; }
+  .hm-row-name .sub {
+    display: block;
+    font-size: 10px;
+    color: var(--lv-muted);
+    font-weight: 500;
+    margin-top: 1px;
+  }
+  .hm-cell {
+    border-radius: var(--radius-sm);
+    height: 44px;
+    cursor: pointer;
+    position: relative;
+    color: rgba(255,255,255,0.95);
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s, box-shadow 0.15s, filter 0.3s;
+    border: 1px solid transparent;
+  }
+  .hm-cell.tick { animation: cellTick 0.6s ease-out; }
+  @keyframes cellTick {
+    0%   { box-shadow: 0 0 0 0 rgba(45,168,44,0.55); }
+    50%  { box-shadow: 0 0 0 4px rgba(45,168,44,0.25); }
+    100% { box-shadow: 0 0 0 0 rgba(45,168,44,0); }
+  }
+  .hm-cell:hover {
+    transform: scale(1.06);
+    box-shadow: var(--shadow-md);
+    z-index: 2;
+  }
+  .hm-cell.lvl-0 { background: var(--heat-0); color: var(--lv-muted); }
+  .hm-cell.lvl-1 { background: var(--heat-1); color: var(--lv-text-2); }
+  .hm-cell.lvl-2 { background: var(--heat-2); color: var(--lv-text-2); }
+  .hm-cell.lvl-3 { background: var(--heat-3); color: #fff; }
+  .hm-cell.lvl-4 { background: var(--heat-4); color: #fff; }
+  .hm-cell.lvl-5 { background: var(--heat-5); color: #fff; }
+  .hm-cell.lvl-6 { background: var(--heat-6); color: #fff; }
+  .hm-cell.lvl-7 { background: var(--heat-7); color: #fff; }
+  .hm-cell.lvl-8 { background: var(--heat-8); color: #fff; }
+  .hm-row-total {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-end;
+    padding: 0 12px 0 8px;
+    border-left: 1px solid var(--lv-border);
+  }
+  .hm-row-total .v {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--lv-text);
+  }
+  .hm-row-total .d {
+    font-size: 10px;
+    margin-top: 2px;
+    font-weight: 600;
+  }
+  .hm-row-total .d.up { color: var(--lv-green-dark); }
+  .hm-row-total .d.down { color: var(--lv-err); }
+  .hm-row-total .d.flat { color: var(--lv-muted); }
+
+  /* Tooltip */
+  .hm-tooltip {
+    position: fixed;
+    z-index: 100;
+    background: var(--lv-navy);
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    pointer-events: none;
+    box-shadow: var(--shadow-lg);
+    min-width: 190px;
+    max-width: 260px;
+    transform: translate(-50%, -100%);
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  .hm-tooltip.on { opacity: 1; }
+  .hm-tooltip .t-title { font-weight: 700; margin-bottom: 4px; }
+  .hm-tooltip .t-amount { font-size: 16px; font-weight: 700; color: var(--lv-green-2); margin-bottom: 4px; }
+  .hm-tooltip .t-meta { color: rgba(255,255,255,0.7); font-size: 11px; }
+
+  /* Heatmap legend */
+  .hm-legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    color: var(--lv-muted);
+    font-size: 11px;
+    flex-wrap: wrap;
+  }
+  .hm-legend-bar {
+    display: flex;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--lv-border);
+  }
+  .hm-legend-bar span {
+    width: 22px; height: 14px;
+    display: block;
+  }
+
+  /* Agentic Reviewer panel */
+  .agent-panel { position: sticky; top: 80px; }
+  .agent-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--lv-border);
+  }
+  .agent-avatar {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--lv-navy), var(--lv-navy-3));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .agent-avatar::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; right: -2px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--lv-green);
+    border: 2px solid var(--lv-surface);
+    box-shadow: 0 0 0 0 rgba(45,168,44,0.55);
+    animation: pulse-green 1.4s ease-out infinite;
+  }
+  .agent-name { font-weight: 700; font-size: 14px; color: var(--lv-text); }
+  .agent-status { font-size: 11px; color: var(--lv-muted); }
+
+  .agent-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 580px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .agent-feed::-webkit-scrollbar { width: 6px; }
+  .agent-feed::-webkit-scrollbar-thumb { background: var(--lv-border-2); border-radius: 3px; }
+
+  .agent-item {
+    border: 1px solid var(--lv-border);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    background: var(--lv-surface-2);
+    animation: fadeIn 0.4s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .agent-item.recommend { border-left: 3px solid var(--lv-info); }
+  .agent-item.predict { border-left: 3px solid var(--lv-purple); }
+  .agent-item.alert { border-left: 3px solid var(--lv-err); }
+  .agent-item.observation { border-left: 3px solid var(--lv-green); }
+
+  .agent-item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .agent-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  .agent-tag.recommend { background: var(--lv-info-bg); color: var(--lv-info); }
+  .agent-tag.predict { background: var(--lv-purple-bg); color: var(--lv-purple); }
+  .agent-tag.alert { background: var(--lv-err-bg); color: var(--lv-err); }
+  .agent-tag.observation { background: var(--lv-green-bg); color: var(--lv-green-dark); }
+  .agent-time { font-size: 10px; color: var(--lv-muted-2); }
+  .agent-body { font-size: 13px; color: var(--lv-text-2); line-height: 1.5; }
+  .agent-body strong { color: var(--lv-text); font-weight: 700; }
+  .agent-confidence {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--lv-muted);
+  }
+  .conf-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--lv-surface-3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .conf-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--lv-info), var(--lv-purple));
+    transition: width 0.5s ease-out;
+  }
+
+  .agent-empty {
+    text-align: center;
+    padding: 24px 12px;
+    color: var(--lv-muted);
+    font-size: 13px;
+  }
+
+  /* Footer */
+  .app-footer {
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid var(--lv-border);
+    color: var(--lv-muted);
+    font-size: 12px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ─── Top navigation ─────────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="brand">
+      <div class="brand-logo" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 9 L16 22 L23 9" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="brand-name">Long View Systems</span>
+      <div class="brand-divider"></div>
+      <span class="product-name">Public Funding Intelligence</span>
+    </div>
+
+    <div class="nav-tabs">
+      <a class="nav-tab" href="search.html">Search</a>
+      <a class="nav-tab" href="dossier.html">Dossier</a>
+      <a class="nav-tab active" href="heatmap.html">Heatmap</a>
+      <a class="nav-tab" href="/">Platform</a>
+    </div>
+
+    <div class="nav-spacer"></div>
+
+    <div class="nav-right">
+      <div class="demo-pill" title="This is a demonstration with simulated tick data">
+        <span class="dot"></span>
+        <span>Demo Mode</span>
+      </div>
+      <button class="icon-btn" @click="toggleTheme" :aria-label="dark ? 'Switch to light mode' : 'Switch to dark mode'" :aria-pressed="dark">
+        {{ dark ? '☀' : '◐' }}
+      </button>
+      <div class="user-avatar" title="Michael Dunham">MD</div>
+    </div>
+  </nav>
+
+  <div class="app">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="page-title">
+        <h1>Realtime Funding Heatmap</h1>
+        <p class="subtitle">Cross-dataset view of where public dollars are landing — by vertical, by quarter. CRA T3010, federal grants &amp; contributions, and Alberta open data unified into one intensity grid, with an agentic reviewer watching for trend shifts and concentration risk.</p>
+      </div>
+      <span class="live-indicator" :class="{paused: !running}">
+        <span class="dot"></span>
+        <span>{{ running ? `LIVE · updated ${lastUpdate}` : 'Paused' }}</span>
+      </span>
+    </div>
+
+    <!-- Demo ribbon -->
+    <div class="demo-ribbon" role="note">
+      <span aria-hidden="true">⚠️</span>
+      <div>
+        <strong>Demonstration build.</strong> Vertical totals, quarterly cells, and agent recommendations shown below are illustrative. The underlying platform aggregates over 851K resolved entities and ~12.2M source rows from CRA, federal, and Alberta open data. Realtime ticks here are simulated for demo purposes.
+      </div>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="kpi-strip">
+      <div class="kpi-card">
+        <div class="kpi-label">Public Funding Tracked</div>
+        <div class="kpi-value">${{ formatBn(kpi.totalAll) }}B</div>
+        <div class="kpi-sub">Last 8 quarters · all verticals</div>
+        <span class="kpi-delta up">▲ {{ kpi.totalDelta.toFixed(1) }}% QoQ</span>
+      </div>
+      <div class="kpi-card amber">
+        <div class="kpi-label">Hottest Cell</div>
+        <div class="kpi-value" style="font-size:18px;">{{ kpi.hottest.vertical }}</div>
+        <div class="kpi-sub">{{ kpi.hottest.quarter }} · ${{ formatM(kpi.hottest.amount) }}M</div>
+        <span class="kpi-delta up">▲ flagged for concentration</span>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-label">Fastest-Growing Vertical</div>
+        <div class="kpi-value" style="font-size:18px;">{{ kpi.growing.vertical }}</div>
+        <div class="kpi-sub">{{ kpi.growing.delta.toFixed(1) }}% growth over window</div>
+        <span class="kpi-delta up">▲ {{ kpi.growing.deltaQoQ.toFixed(1) }}% QoQ</span>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">Predicted Next Quarter</div>
+        <div class="kpi-value">${{ formatBn(kpi.nextQuarter) }}B</div>
+        <div class="kpi-sub">Agent forecast · {{ kpi.nextLabel }}</div>
+        <span class="kpi-delta" :class="kpi.nextDelta >= 0 ? 'up' : 'down'">
+          {{ kpi.nextDelta >= 0 ? '▲' : '▼' }} {{ Math.abs(kpi.nextDelta).toFixed(1) }}% projected
+        </span>
+      </div>
+    </div>
+
+    <!-- Heatmap + Agentic reviewer -->
+    <div class="two-col">
+
+      <!-- Heatmap panel -->
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Funding by Vertical · Quarterly Heatmap</div>
+            <div class="panel-sub">Cell intensity = total dollars deployed in that quarter. Hover for amounts; click to pin a vertical for the agent.</div>
+          </div>
+          <div class="panel-controls">
+            <button class="pill-btn" :class="{active: source==='all'}" @click="setSource('all')">All sources</button>
+            <button class="pill-btn" :class="{active: source==='cra'}" @click="setSource('cra')">CRA</button>
+            <button class="pill-btn" :class="{active: source==='fed'}" @click="setSource('fed')">Federal</button>
+            <button class="pill-btn" :class="{active: source==='ab'}" @click="setSource('ab')">Alberta</button>
+            <button class="pill-btn" @click="running = !running">{{ running ? '⏸ Pause' : '▶ Resume' }}</button>
+          </div>
+        </div>
+
+        <div class="heatmap-wrap">
+          <div class="heatmap-grid" :style="{ '--cols': quarters.length }">
+            <div class="hm-corner">Vertical / Quarter</div>
+            <div v-for="q in quarters" :key="'h-'+q" class="hm-col-label">{{ q }}</div>
+            <div class="hm-corner" style="text-align:right;">Total · QoQ</div>
+
+            <template v-for="row in heatRows" :key="row.vertical">
+              <div class="hm-row-label" :class="{pinned: pinned === row.vertical}" @click="pinVertical(row.vertical)">
+                <div class="hm-row-icon" :style="{ background: row.tint }">{{ row.icon }}</div>
+                <div class="hm-row-name">
+                  {{ row.vertical }}
+                  <span class="sub">{{ row.tag }}</span>
+                </div>
+              </div>
+              <div
+                v-for="(cell, qi) in row.cells"
+                :key="'c-'+row.vertical+'-'+qi"
+                class="hm-cell"
+                :class="['lvl-' + cell.level, { tick: cell.ticked }]"
+                @mouseenter="showTip($event, row, quarters[qi], cell)"
+                @mousemove="moveTip"
+                @mouseleave="hideTip"
+              >${{ formatCell(cell.amount) }}</div>
+              <div class="hm-row-total">
+                <span class="v">${{ formatBn(row.total) }}B</span>
+                <span class="d" :class="row.qoq >= 1 ? 'up' : row.qoq <= -1 ? 'down' : 'flat'">
+                  {{ row.qoq >= 0 ? '▲' : '▼' }} {{ Math.abs(row.qoq).toFixed(1) }}%
+                </span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <div class="hm-legend">
+          <span>Lower</span>
+          <div class="hm-legend-bar">
+            <span style="background:var(--heat-0);"></span>
+            <span style="background:var(--heat-1);"></span>
+            <span style="background:var(--heat-2);"></span>
+            <span style="background:var(--heat-3);"></span>
+            <span style="background:var(--heat-4);"></span>
+            <span style="background:var(--heat-5);"></span>
+            <span style="background:var(--heat-6);"></span>
+            <span style="background:var(--heat-7);"></span>
+            <span style="background:var(--heat-8);"></span>
+          </div>
+          <span>Higher · concentration risk</span>
+          <span style="margin-left:auto;">{{ totalCells }} cells · refreshed every {{ tickIntervalMs/1000 }}s</span>
+        </div>
+      </section>
+
+      <!-- Agentic reviewer panel -->
+      <aside class="panel agent-panel">
+        <div class="agent-header">
+          <div class="agent-avatar" aria-hidden="true">🤖</div>
+          <div>
+            <div class="agent-name">Funding Reviewer</div>
+            <div class="agent-status">Watching {{ heatRows.length }} verticals · {{ feed.length }} signals</div>
+          </div>
+        </div>
+
+        <div class="panel-controls" style="margin-bottom:10px;">
+          <button class="pill-btn" :class="{active: filter==='all'}" @click="filter='all'">All</button>
+          <button class="pill-btn" :class="{active: filter==='alert'}" @click="filter='alert'">Alerts</button>
+          <button class="pill-btn" :class="{active: filter==='predict'}" @click="filter='predict'">Predictions</button>
+          <button class="pill-btn" :class="{active: filter==='recommend'}" @click="filter='recommend'">Recommendations</button>
+        </div>
+
+        <div class="agent-feed">
+          <div v-if="filteredFeed.length === 0" class="agent-empty">
+            No signals match this filter yet. The agent observes a fresh tick every {{ tickIntervalMs/1000 }}s.
+          </div>
+          <div v-for="item in filteredFeed" :key="item.id" class="agent-item" :class="item.kind">
+            <div class="agent-item-head">
+              <span class="agent-tag" :class="item.kind">{{ item.label }}</span>
+              <span class="agent-time">{{ item.timeLabel }}</span>
+            </div>
+            <div class="agent-body" v-html="item.html"></div>
+            <div v-if="item.confidence != null" class="agent-confidence">
+              <span>Confidence</span>
+              <div class="conf-bar"><div class="conf-fill" :style="{ width: item.confidence + '%' }"></div></div>
+              <span>{{ item.confidence }}%</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="app-footer">
+      Long View Systems · Agency 2026 · April 29, 2026 · Heatmap data simulated for demonstration
+    </footer>
+  </div>
+
+  <!-- Floating tooltip -->
+  <div ref="tooltip" class="hm-tooltip" :class="{on: tipOn}">
+    <div class="t-title">{{ tip.title }}</div>
+    <div class="t-amount">${{ formatM(tip.amount) }}M</div>
+    <div class="t-meta">{{ tip.meta }}</div>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } = Vue;
+
+// ─── Reference data ───────────────────────────────────────────────
+const VERTICALS = [
+  { vertical: 'Health & Mental Health', tag: 'Hospitals · clinics · counselling', icon: '⚕', tint: 'rgba(45,168,44,0.14)', baseM: [180, 195, 210, 220, 245, 260, 275, 290] },
+  { vertical: 'Indigenous Programs',     tag: 'Education · housing · reconciliation', icon: '◈', tint: 'rgba(217,119,6,0.16)', baseM: [85, 92, 110, 130, 158, 184, 210, 240] },
+  { vertical: 'Housing & Shelter',       tag: 'Affordable · supportive · co-op',     icon: '⌂', tint: 'rgba(37,99,235,0.14)', baseM: [120, 132, 145, 160, 175, 168, 180, 198] },
+  { vertical: 'Education & Research',    tag: 'K-12 · post-secondary · STEM',         icon: '✎', tint: 'rgba(124,58,237,0.14)', baseM: [140, 148, 152, 162, 170, 175, 182, 188] },
+  { vertical: 'Environment & Climate',   tag: 'Conservation · clean tech',            icon: '✿', tint: 'rgba(45,168,44,0.14)', baseM: [62, 70, 78, 84, 76, 82, 90, 96] },
+  { vertical: 'Defense & Security',      tag: 'Federal procurement · cyber',          icon: '⚔', tint: 'rgba(220,38,38,0.14)', baseM: [210, 220, 230, 245, 260, 282, 295, 320] },
+  { vertical: 'Infrastructure',          tag: 'Transit · water · broadband',          icon: '⛯', tint: 'rgba(37,99,235,0.14)', baseM: [165, 170, 178, 184, 190, 198, 205, 215] },
+  { vertical: 'Arts & Culture',          tag: 'Museums · festivals · media',          icon: '♪', tint: 'rgba(124,58,237,0.14)', baseM: [42, 44, 46, 48, 50, 52, 54, 56] },
+  { vertical: 'Economic Development',    tag: 'SMEs · regional · innovation',         icon: '⇡', tint: 'rgba(217,119,6,0.16)', baseM: [98, 104, 112, 118, 122, 130, 138, 145] },
+  { vertical: 'Justice & Legal Aid',     tag: 'Courts · advocacy · victim',           icon: '⚖', tint: 'rgba(220,38,38,0.14)', baseM: [38, 40, 42, 44, 46, 48, 50, 52] },
+  { vertical: 'Agriculture & Food',      tag: 'Producers · food security',            icon: '🌾', tint: 'rgba(45,168,44,0.14)', baseM: [56, 62, 65, 70, 72, 74, 78, 82] },
+  { vertical: 'International Aid',       tag: 'Development · disaster relief',        icon: '✈', tint: 'rgba(37,99,235,0.14)', baseM: [48, 50, 52, 54, 50, 48, 46, 44] }
+];
+
+const QUARTERS = ['Q2-24','Q3-24','Q4-24','Q1-25','Q2-25','Q3-25','Q4-25','Q1-26'];
+const NEXT_QUARTER = 'Q2-26';
+
+// Source-specific weighting so the filter actually changes the picture
+const SOURCE_WEIGHTS = {
+  all: { cra: 1, fed: 1, ab: 1 },
+  cra: { cra: 1, fed: 0.05, ab: 0.05 },
+  fed: { cra: 0.1, fed: 1, ab: 0.1 },
+  ab:  { cra: 0.05, fed: 0.05, ab: 1 }
+};
+
+// Per-vertical source mix (sums to ~1)
+const VERTICAL_SOURCE_MIX = {
+  'Health & Mental Health':    { cra: 0.55, fed: 0.30, ab: 0.15 },
+  'Indigenous Programs':        { cra: 0.30, fed: 0.55, ab: 0.15 },
+  'Housing & Shelter':          { cra: 0.40, fed: 0.40, ab: 0.20 },
+  'Education & Research':       { cra: 0.45, fed: 0.40, ab: 0.15 },
+  'Environment & Climate':      { cra: 0.30, fed: 0.55, ab: 0.15 },
+  'Defense & Security':         { cra: 0.05, fed: 0.90, ab: 0.05 },
+  'Infrastructure':             { cra: 0.10, fed: 0.55, ab: 0.35 },
+  'Arts & Culture':             { cra: 0.55, fed: 0.30, ab: 0.15 },
+  'Economic Development':       { cra: 0.20, fed: 0.50, ab: 0.30 },
+  'Justice & Legal Aid':        { cra: 0.45, fed: 0.40, ab: 0.15 },
+  'Agriculture & Food':         { cra: 0.20, fed: 0.55, ab: 0.25 },
+  'International Aid':          { cra: 0.30, fed: 0.65, ab: 0.05 }
+};
+
+// Pre-canned agentic recommendations / predictions surface as ticks come in
+const AGENT_LIBRARY = [
+  { kind: 'observation', body: '<strong>Indigenous Programs</strong> jumped {pct}% QoQ to <strong>${q}M</strong> — driven by federal reconciliation envelope and AB capital grants.', vertical: 'Indigenous Programs', confidence: 92 },
+  { kind: 'predict',     body: 'Forecasting <strong>Defense &amp; Security</strong> at <strong>${pred}M</strong> next quarter (+{pct}%). Concentration risk: top-2 vendors hold 67% of recent spend.', vertical: 'Defense & Security', confidence: 78 },
+  { kind: 'alert',       body: '<strong>Environment &amp; Climate</strong> down {pct}% over the last 3 quarters. Recommend cross-checking T3010 overhead in this vertical for stranded recipients.', vertical: 'Environment & Climate', confidence: 71 },
+  { kind: 'recommend',   body: 'Drill into <strong>Housing &amp; Shelter</strong> dual-funded recipients (CRA + AB sole-source). 14 entities show >70% government dependency — candidates for the dossier reviewer.', vertical: 'Housing & Shelter', confidence: 84 },
+  { kind: 'predict',     body: '<strong>Health &amp; Mental Health</strong> trending toward <strong>${pred}M</strong> next quarter; trajectory consistent with budget signals from the federal mental health transfer.', vertical: 'Health & Mental Health', confidence: 88 },
+  { kind: 'observation', body: '<strong>Infrastructure</strong> is steady at ~${q}M per quarter — but provincial:federal share has shifted 12 points toward Alberta in the last two quarters.', vertical: 'Infrastructure', confidence: 76 },
+  { kind: 'alert',       body: '<strong>International Aid</strong> contracted {pct}% — three large multi-year envelopes ended without renewal. Recommend a recipient-level audit before Q2-26 close.', vertical: 'International Aid', confidence: 80 },
+  { kind: 'recommend',   body: 'Pin <strong>Education &amp; Research</strong> on the heatmap and run the Dossier Explorer on its top-10 recipients — sector HHI is creeping above 0.18.', vertical: 'Education & Research', confidence: 69 },
+  { kind: 'predict',     body: '<strong>Economic Development</strong> projected to clear <strong>${pred}M</strong> next quarter; growth concentrated in regional innovation streams (PrairiesCan + AB).', vertical: 'Economic Development', confidence: 74 },
+  { kind: 'observation', body: '<strong>Arts &amp; Culture</strong> remains the smallest vertical at ~${q}M/quarter — flat trajectory across all three datasets.', vertical: 'Arts & Culture', confidence: 90 },
+  { kind: 'alert',       body: 'Sole-source pattern detected in <strong>Defense &amp; Security</strong>: 4 contracts above $50M with the same vendor in two consecutive quarters.', vertical: 'Defense & Security', confidence: 86 },
+  { kind: 'recommend',   body: 'Open the cross-dataset filter on the heatmap — Federal-only view shows <strong>{topVertical}</strong> dominates 38% of recent federal disbursements.', vertical: null, confidence: 82 }
+];
+
+const PINNED_TEMPLATES = {
+  observation: 'Pinned <strong>{v}</strong>. Quarterly arc: {trend}. Agent will surface anomalies on this vertical first.',
+  predict:     'On <strong>{v}</strong>, projecting <strong>${pred}M</strong> next quarter ({pct}% vs latest). Driven by simulated source mix and recent QoQ trajectory.',
+  recommend:   'Suggest pivoting the heatmap to per-source view for <strong>{v}</strong> — the CRA/FED/AB split changes which entities are accountable.'
+};
+
+// ─── App ────────────────────────────────────────────────────────────
+createApp({
+  setup() {
+    const dark = ref(false);
+    const running = ref(true);
+    const source = ref('all');
+    const filter = ref('all');
+    const pinned = ref(null);
+    const lastUpdate = ref('just now');
+    const tickIntervalMs = 4000;
+    const tooltip = ref(null);
+
+    // Mutable per-vertical, per-quarter amounts (in millions)
+    const data = reactive(
+      VERTICALS.map(v => ({
+        ...v,
+        amounts: v.baseM.slice(),
+        ticked: v.baseM.map(() => false)
+      }))
+    );
+
+    const feed = ref([]);
+    let feedSeq = 0;
+    let timer = null;
+    let clockTimer = null;
+
+    function pushSignal(kind, html, vertical, confidence) {
+      const labels = { observation: 'OBSERVATION', predict: 'PREDICTION', alert: 'ALERT', recommend: 'RECOMMENDATION' };
+      feed.value.unshift({
+        id: ++feedSeq,
+        kind,
+        label: labels[kind] || kind.toUpperCase(),
+        html,
+        vertical,
+        confidence,
+        ts: Date.now(),
+        timeLabel: 'just now'
+      });
+      // Cap feed at 30
+      if (feed.value.length > 30) feed.value.length = 30;
+    }
+
+    function updateTimeLabels() {
+      const now = Date.now();
+      feed.value.forEach(item => {
+        const sec = Math.floor((now - item.ts) / 1000);
+        if (sec < 5) item.timeLabel = 'just now';
+        else if (sec < 60) item.timeLabel = `${sec}s ago`;
+        else if (sec < 3600) item.timeLabel = `${Math.floor(sec/60)}m ago`;
+        else item.timeLabel = `${Math.floor(sec/3600)}h ago`;
+      });
+      const lu = feed.value[0];
+      if (lu) lastUpdate.value = lu.timeLabel;
+    }
+
+    function pickAgentSignal() {
+      const tpl = AGENT_LIBRARY[Math.floor(Math.random() * AGENT_LIBRARY.length)];
+      // Find current data for the named vertical (if any)
+      const row = data.find(d => d.vertical === tpl.vertical);
+      const latest = row ? row.amounts[row.amounts.length - 1] : 0;
+      const prev = row ? row.amounts[row.amounts.length - 2] : 0;
+      const pct = prev ? ((latest - prev) / prev) * 100 : 0;
+      const pred = Math.round(latest * (1 + (pct/100)*0.6 + (Math.random()*0.04 - 0.02)));
+      const topVertical = [...data].sort((a,b) => sumArr(b.amounts) - sumArr(a.amounts))[0].vertical;
+      const html = tpl.body
+        .replace('{q}', formatM(latest))
+        .replace('{pred}', formatM(pred))
+        .replace('{pct}', Math.abs(pct).toFixed(1))
+        .replace('{topVertical}', topVertical);
+      // jitter the confidence a touch so it feels live
+      const conf = Math.max(40, Math.min(99, tpl.confidence + Math.round((Math.random()*8 - 4))));
+      pushSignal(tpl.kind, html, tpl.vertical, conf);
+    }
+
+    function tick() {
+      if (!running.value) return;
+      // Ripple realistic changes through the latest 1–3 quarters of 2–4 verticals
+      const touches = 2 + Math.floor(Math.random() * 3);
+      for (let t = 0; t < touches; t++) {
+        const row = data[Math.floor(Math.random() * data.length)];
+        const startQ = Math.max(0, row.amounts.length - 1 - Math.floor(Math.random() * 2));
+        for (let qi = startQ; qi < row.amounts.length; qi++) {
+          const drift = (Math.random() - 0.45) * row.amounts[qi] * 0.06;
+          row.amounts[qi] = Math.max(8, Math.round(row.amounts[qi] + drift));
+          row.ticked[qi] = true;
+          // Clear the ticked flag shortly so the animation re-fires next time
+          setTimeout(() => { row.ticked[qi] = false; }, 600);
+        }
+      }
+      pickAgentSignal();
+      lastUpdate.value = 'just now';
+    }
+
+    onMounted(() => {
+      // Seed with one signal per kind so the panel isn't empty on load
+      pushSignal('observation', 'Heatmap initialised with 8 quarters across 12 verticals. Watching for QoQ deltas above 8% and concentration breakouts.', null, 95);
+      pickAgentSignal();
+      pickAgentSignal();
+      // Try once to fetch live data; falls back to local generation silently
+      tryLiveFetch();
+      timer = setInterval(tick, tickIntervalMs);
+      clockTimer = setInterval(updateTimeLabels, 1000);
+    });
+    onBeforeUnmount(() => {
+      if (timer) clearInterval(timer);
+      if (clockTimer) clearInterval(clockTimer);
+    });
+
+    async function tryLiveFetch() {
+      try {
+        const res = await fetch('/api/funding-heatmap', { method: 'GET' });
+        if (!res.ok) return;
+        const live = await res.json();
+        if (live && Array.isArray(live.rows)) {
+          live.rows.forEach(lr => {
+            const row = data.find(d => d.vertical === lr.vertical);
+            if (row && Array.isArray(lr.amounts) && lr.amounts.length === row.amounts.length) {
+              row.amounts = lr.amounts.slice();
+            }
+          });
+        }
+      } catch (e) {
+        /* offline → client-side simulation continues */
+      }
+    }
+
+    function setSource(s) {
+      source.value = s;
+      pushSignal('observation', `Switched to <strong>${s === 'all' ? 'all sources' : s.toUpperCase()}</strong>. Reweighting cells and re-evaluating the leaderboard.`, null, 99);
+    }
+
+    function pinVertical(v) {
+      pinned.value = pinned.value === v ? null : v;
+      if (pinned.value) {
+        const row = data.find(d => d.vertical === v);
+        const latest = row.amounts[row.amounts.length - 1];
+        const prev = row.amounts[row.amounts.length - 2];
+        const pct = prev ? ((latest - prev) / prev) * 100 : 0;
+        const pred = Math.round(latest * (1 + (pct/100)*0.6));
+        const trend = sparkline(row.amounts);
+        const tpl = PINNED_TEMPLATES.observation
+          .replace('{v}', v)
+          .replace('{trend}', trend);
+        pushSignal('observation', tpl, v, 95);
+        pushSignal('predict',
+          PINNED_TEMPLATES.predict.replace('{v}', v).replace('{pred}', formatM(pred)).replace('{pct}', (pct>=0?'+':'') + pct.toFixed(1)),
+          v, 80);
+      }
+    }
+
+    function sparkline(arr) {
+      const min = Math.min(...arr), max = Math.max(...arr);
+      const range = max - min || 1;
+      const steps = ' ▂▃▄▅▆▇█';
+      return arr.map(v => steps[Math.min(steps.length-1, Math.round(((v - min)/range) * (steps.length-1)))]).join('');
+    }
+
+    function sumArr(a) { return a.reduce((s, v) => s + v, 0); }
+
+    function levelFor(amount, max) {
+      if (max === 0) return 0;
+      const r = amount / max;
+      // 9 buckets, top 3 are warm tones (concentration)
+      if (r >= 0.92) return 8;
+      if (r >= 0.82) return 7;
+      if (r >= 0.70) return 6;
+      if (r >= 0.58) return 5;
+      if (r >= 0.46) return 4;
+      if (r >= 0.34) return 3;
+      if (r >= 0.22) return 2;
+      if (r >= 0.10) return 1;
+      return 0;
+    }
+
+    // Adjust the displayed amounts based on the source filter and per-vertical mix
+    const heatRows = computed(() => {
+      const w = SOURCE_WEIGHTS[source.value] || SOURCE_WEIGHTS.all;
+      const adjusted = data.map(row => {
+        const mix = VERTICAL_SOURCE_MIX[row.vertical] || { cra: 0.34, fed: 0.33, ab: 0.33 };
+        const factor = mix.cra * w.cra + mix.fed * w.fed + mix.ab * w.ab;
+        const amounts = row.amounts.map(v => Math.round(v * factor));
+        return { ...row, amountsAdj: amounts };
+      });
+      // Find global max for level mapping (per-source so the contrast adapts)
+      let max = 0;
+      adjusted.forEach(r => r.amountsAdj.forEach(a => { if (a > max) max = a; }));
+      return adjusted.map(r => {
+        const cells = r.amountsAdj.map((amount, qi) => ({
+          amount,
+          level: levelFor(amount, max),
+          ticked: r.ticked[qi]
+        }));
+        const total = sumArr(r.amountsAdj);
+        const latest = r.amountsAdj[r.amountsAdj.length - 1];
+        const prev = r.amountsAdj[r.amountsAdj.length - 2] || 1;
+        const qoq = ((latest - prev) / prev) * 100;
+        return { ...r, cells, total, qoq };
+      });
+    });
+
+    const totalCells = computed(() => heatRows.value.length * QUARTERS.length);
+
+    // KPIs derived from heatRows
+    const kpi = computed(() => {
+      const rows = heatRows.value;
+      const totalAll = rows.reduce((s, r) => s + r.total, 0);
+      // QoQ for the whole window
+      const lastQ = rows.reduce((s, r) => s + r.cells[r.cells.length - 1].amount, 0);
+      const prevQ = rows.reduce((s, r) => s + r.cells[r.cells.length - 2].amount, 0) || 1;
+      const totalDelta = ((lastQ - prevQ) / prevQ) * 100;
+
+      let hottest = { vertical: '', quarter: '', amount: 0 };
+      rows.forEach(r => r.cells.forEach((c, qi) => {
+        if (c.amount > hottest.amount) hottest = { vertical: r.vertical, quarter: QUARTERS[qi], amount: c.amount };
+      }));
+
+      const sorted = [...rows].sort((a, b) => b.qoq - a.qoq);
+      const growing = sorted[0] || rows[0];
+      const growingDelta = ((growing.cells[growing.cells.length - 1].amount - growing.cells[0].amount) / Math.max(1, growing.cells[0].amount)) * 100;
+
+      // Predicted next quarter total = sum of per-vertical projections
+      const next = rows.reduce((s, r) => {
+        const a = r.cells[r.cells.length - 1].amount;
+        const b = r.cells[r.cells.length - 2].amount || a;
+        const pct = (a - b) / Math.max(1, b);
+        return s + Math.max(0, Math.round(a * (1 + pct * 0.6)));
+      }, 0);
+      const nextDelta = ((next - lastQ) / Math.max(1, lastQ)) * 100;
+
+      return {
+        totalAll,                                    // M
+        totalDelta,
+        hottest,
+        growing: { vertical: growing.vertical, delta: growingDelta, deltaQoQ: growing.qoq },
+        nextQuarter: next,
+        nextDelta,
+        nextLabel: NEXT_QUARTER
+      };
+    });
+
+    const filteredFeed = computed(() => filter.value === 'all' ? feed.value : feed.value.filter(f => f.kind === filter.value));
+
+    // Tooltip state
+    const tip = reactive({ title: '', amount: 0, meta: '' });
+    const tipOn = ref(false);
+    function showTip(evt, row, quarter, cell) {
+      tip.title = `${row.vertical} · ${quarter}`;
+      tip.amount = cell.amount;
+      const sourceLabel = source.value === 'all' ? 'all sources' : source.value.toUpperCase();
+      tip.meta = `Source filter: ${sourceLabel} · level ${cell.level}/8`;
+      tipOn.value = true;
+      moveTip(evt);
+    }
+    function moveTip(evt) {
+      if (!tooltip.value) return;
+      tooltip.value.style.left = evt.clientX + 'px';
+      tooltip.value.style.top = (evt.clientY - 10) + 'px';
+    }
+    function hideTip() { tipOn.value = false; }
+
+    function toggleTheme() {
+      dark.value = !dark.value;
+      document.documentElement.classList.toggle('dark', dark.value);
+    }
+
+    function formatM(n) {
+      if (n >= 1000) return (n / 1000).toFixed(2) + 'k';
+      return Math.round(n).toString();
+    }
+    function formatBn(n) {
+      // n is in millions
+      return (n / 1000).toFixed(2);
+    }
+    function formatCell(n) {
+      if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+      return Math.round(n).toString();
+    }
+
+    return {
+      dark, running, source, filter, pinned, lastUpdate, tickIntervalMs, tooltip,
+      heatRows, totalCells, quarters: QUARTERS, kpi, feed, filteredFeed, tip, tipOn,
+      toggleTheme, setSource, pinVertical,
+      showTip, moveTip, hideTip,
+      formatM, formatBn, formatCell
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

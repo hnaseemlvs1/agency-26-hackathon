@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Government Intelligence Search</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<style>
+  :root {
+    --bg: #f6f8fa; --surface: #ffffff; --surface-2: #f0f3f6;
+    --border: #d0d7de; --text: #1f2328; --muted: #57606a; --accent: #0969da;
+    --accent-2: #8250df; --ok: #1a7f37; --warn: #bf8700; --err: #cf222e;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
+  }
+  html.dark {
+    --bg: #0d1117; --surface: #161b22; --surface-2: #1c2128;
+    --border: #30363d; --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff;
+    --accent-2: #bc8cff; --ok: #3fb950; --warn: #d29922; --err: #f85149;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+         background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── Layout ── */
+  .app { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  /* ── Header ── */
+  .header { display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 28px; gap: 12px; }
+  .header-left h1 { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .header-left p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .header-left .breadcrumb { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .header-left .breadcrumb a { color: var(--accent); text-decoration: none; }
+  .theme-btn { padding: 7px 13px; border: 1px solid var(--border); background: var(--surface);
+               color: var(--text); border-radius: 6px; cursor: pointer; font-size: 12px;
+               white-space: nowrap; flex-shrink: 0; }
+  .theme-btn:hover { background: var(--surface-2); }
+
+  /* ── Search bar ── */
+  .search-area { margin-bottom: 16px; }
+  .search-row { display: flex; gap: 10px; }
+  .search-row input {
+    flex: 1; padding: 12px 16px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); border-radius: 8px;
+    font-size: 15px; box-shadow: var(--shadow);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .search-row input:focus { outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(9,105,218,0.12); }
+  .search-row input::placeholder { color: var(--muted); }
+  .search-btn {
+    padding: 12px 20px; background: var(--accent); color: #fff;
+    border: none; border-radius: 8px; cursor: pointer; font-size: 14px;
+    font-weight: 600; white-space: nowrap; transition: opacity 0.15s;
+  }
+  .search-btn:hover { opacity: 0.88; }
+  .search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Example chips ── */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chip {
+    padding: 5px 12px; border: 1px solid var(--border); border-radius: 20px;
+    font-size: 12px; color: var(--muted); cursor: pointer; background: var(--surface);
+    transition: all 0.15s;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); background: var(--surface-2); }
+  .chip.bad { border-color: #cf222e40; color: var(--err); }
+  .chip.bad:hover { background: #cf222e0a; }
+  .chip.good { border-color: #1a7f3740; color: var(--ok); }
+  .chip.good:hover { background: #1a7f370a; }
+  .chip.cross { border-color: #8250df40; color: var(--accent-2); }
+  .chip.cross:hover { background: #8250df0a; }
+
+  /* ── Results meta bar ── */
+  .results-meta {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+    font-size: 13px; color: var(--muted); flex-wrap: wrap;
+  }
+  .mode-badge {
+    display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px;
+    border-radius: 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .mode-badge.bad { background: #cf222e15; color: var(--err); border: 1px solid #cf222e30; }
+  .mode-badge.good { background: #1a7f3715; color: var(--ok); border: 1px solid #1a7f3730; }
+  .mode-badge.mixed { background: #8250df15; color: var(--accent-2); border: 1px solid #8250df30; }
+  .sql-toggle {
+    margin-left: auto; font-size: 12px; color: var(--accent); cursor: pointer;
+    background: none; border: none; padding: 0; font-family: inherit;
+  }
+  .sql-toggle:hover { text-decoration: underline; }
+  .sql-box {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px 14px; font-size: 12px; font-family: ui-monospace, "Cascadia Code", monospace;
+    color: var(--text); white-space: pre; overflow-x: auto; margin-bottom: 16px;
+    line-height: 1.6;
+  }
+
+  /* ── Result card ── */
+  .result-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 14px; box-shadow: var(--shadow); overflow: hidden;
+    transition: box-shadow 0.15s;
+  }
+  .result-card:hover { box-shadow: var(--shadow-lg); }
+  .result-card.bad { border-left: 4px solid var(--err); }
+  .result-card.good { border-left: 4px solid var(--ok); }
+  .result-card.mixed { border-left: 4px solid var(--accent-2); }
+
+  .card-header {
+    display: flex; align-items: center; gap: 12px; padding: 14px 18px 10px;
+    flex-wrap: wrap;
+  }
+  .card-icon { font-size: 18px; flex-shrink: 0; }
+  .card-name { font-size: 16px; font-weight: 700; color: var(--text); flex: 1; min-width: 160px; }
+  .score-badge {
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px;
+    border-radius: 6px; font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .score-badge.high-risk { background: #cf222e15; color: var(--err); border: 1px solid #cf222e30; }
+  .score-badge.elevated { background: #bf870015; color: var(--warn); border: 1px solid #bf870030; }
+  .score-badge.moderate { background: #bf870008; color: var(--warn); border: 1px solid #bf870020; }
+  .score-badge.exemplary { background: #1a7f3715; color: var(--ok); border: 1px solid #1a7f3730; }
+  .score-badge.high-performing { background: #1a7f3710; color: var(--ok); border: 1px solid #1a7f3720; }
+
+  .card-meta { padding: 0 18px 8px; font-size: 12px; color: var(--muted);
+               display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+  .source-pill {
+    display: inline-block; padding: 1px 7px; border-radius: 4px;
+    font-size: 11px; font-weight: 600;
+  }
+  .source-pill.cra { background: #0969da15; color: var(--accent); border: 1px solid #0969da30; }
+  .source-pill.fed { background: #8250df15; color: var(--accent-2); border: 1px solid #8250df30; }
+  .source-pill.ab  { background: #1a7f3715; color: var(--ok); border: 1px solid #1a7f3730; }
+
+  /* ── Policy Pulse ── */
+  .policy-pulse {
+    margin: 6px 18px 8px; padding: 7px 12px; border-radius: 6px;
+    display: flex; align-items: flex-start; gap: 8px; font-size: 12px;
+  }
+  .policy-pulse.aligned { background: #1a7f3710; border: 1px solid #1a7f3730; }
+  .policy-pulse.misaligned { background: #cf222e0a; border: 1px solid #cf222e25; }
+  .policy-pulse.neutral { background: #bf870008; border: 1px solid #bf870025; }
+  .policy-pulse .pp-badge {
+    font-weight: 700; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;
+  }
+  .policy-pulse.aligned .pp-badge { background: #1a7f3720; color: var(--ok); }
+  .policy-pulse.misaligned .pp-badge { background: #cf222e20; color: var(--err); }
+  .policy-pulse.neutral .pp-badge { background: #bf870020; color: var(--warn); }
+  .policy-pulse .pp-note { color: var(--muted); line-height: 1.4; }
+  .policy-pulse .pp-area { font-weight: 600; color: var(--text); }
+
+  /* ── Narrative ── */
+  .card-narrative { padding: 4px 18px 10px; font-size: 13px; color: var(--text); line-height: 1.6; }
+
+  /* ── Flags ── */
+  .card-flags { padding: 0 18px 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .flag-pill {
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; font-weight: 500;
+  }
+  .flag-pill.bad  { background: #cf222e0d; color: var(--err); border: 1px solid #cf222e25; }
+  .flag-pill.good { background: #1a7f370d; color: var(--ok); border: 1px solid #1a7f3725; }
+  .flag-pill.neutral { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+
+  /* ── Card actions ── */
+  .card-actions {
+    padding: 10px 18px 14px; display: flex; gap: 10px; flex-wrap: wrap;
+    border-top: 1px solid var(--border); background: var(--surface-2);
+  }
+  .action-btn {
+    padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px;
+  }
+  .action-btn:hover { background: var(--surface-2); border-color: var(--accent); color: var(--accent); }
+  .action-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .action-btn.primary:hover { opacity: 0.85; color: #fff; }
+  .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Web Intel Panel ── */
+  .web-intel-panel {
+    margin: 0 18px 14px; padding: 14px; border-radius: 8px;
+    background: var(--surface-2); border: 1px solid var(--border);
+  }
+  .web-intel-panel h4 { font-size: 12px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+  .web-intel-panel .registry { font-size: 12px; color: var(--muted); margin-bottom: 10px;
+    padding: 6px 10px; background: var(--surface); border-radius: 4px; border: 1px solid var(--border); }
+  .news-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 7px;
+               font-size: 12px; }
+  .news-item .news-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .news-item .news-body { flex: 1; }
+  .news-item .news-headline { font-weight: 600; color: var(--text); line-height: 1.3; }
+  .news-item .news-source { color: var(--muted); font-size: 11px; margin-top: 1px; }
+  .news-item.positive .news-icon::before { content: '✅'; }
+  .news-item.negative .news-icon::before { content: '📰'; }
+  .news-item.neutral  .news-icon::before { content: '📄'; }
+  .web-flags { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+  .web-flag { font-size: 12px; padding: 4px 8px; border-radius: 4px; }
+  .web-flag.bad  { background: #cf222e0d; color: var(--err); border: 1px solid #cf222e20; }
+  .web-flag.good { background: #1a7f370d; color: var(--ok); border: 1px solid #1a7f3720; }
+  .web-summary { margin-top: 10px; padding: 8px 10px; background: var(--surface);
+    border-radius: 4px; border: 1px solid var(--border); font-size: 12px;
+    color: var(--muted); line-height: 1.6; font-style: italic; }
+
+  /* ── Skeleton loading ── */
+  .skeleton { animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .skel-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 14px; padding: 18px; box-shadow: var(--shadow);
+  }
+  .skel-line {
+    height: 14px; background: var(--border); border-radius: 4px; margin-bottom: 10px;
+  }
+  .skel-line.title { height: 18px; width: 55%; }
+  .skel-line.short { width: 30%; }
+  .skel-line.full  { width: 95%; }
+  .skel-line.w80   { width: 80%; }
+  .skel-line.w60   { width: 60%; }
+
+  /* ── Spinner ── */
+  .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid currentColor;
+          border-top-color: transparent; border-radius: 50%;
+          animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Empty/Error states ── */
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty h3 { font-size: 16px; color: var(--text); margin-bottom: 6px; }
+  .error-box { background: #cf222e0a; border: 1px solid #cf222e30; border-radius: 8px;
+               padding: 14px 16px; color: var(--err); font-size: 13px; margin-bottom: 16px; }
+
+  /* ── Hero area (pre-search) ── */
+  .hero { text-align: center; padding: 40px 0 36px; }
+  .hero h2 { font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+  .hero p { font-size: 15px; color: var(--muted); max-width: 520px; margin: 0 auto 28px; }
+  .stats-row { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; margin-top: 28px; }
+  .stat-item { text-align: center; }
+  .stat-item .num { font-size: 24px; font-weight: 800; color: var(--text); }
+  .stat-item .lab { font-size: 11px; color: var(--muted); text-transform: uppercase;
+                    letter-spacing: 0.06em; margin-top: 2px; }
+
+  /* ── AI tag ── */
+  .ai-tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px;
+            font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+            background: linear-gradient(135deg, #0969da, #8250df);
+            color: #fff; margin-left: 8px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div id="app">
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="breadcrumb">
+        <a href="/">🏛️ AI for Accountability</a> › Intelligence Search
+      </div>
+      <h1>Government Intelligence Search <span class="ai-tag">AI</span></h1>
+      <p>Natural language search across 851K resolved entities · CRA · Federal Grants · Alberta</p>
+    </div>
+    <button class="theme-btn" @click="toggleTheme">{{ dark ? '☀️ Light' : '🌙 Dark' }}</button>
+  </div>
+
+  <!-- Search bar -->
+  <div class="search-area">
+    <div class="search-row">
+      <input
+        v-model="query"
+        type="text"
+        placeholder="Ask anything — e.g. 'bad actors in housing funding' or 'high-performing Indigenous education charities'"
+        @keydown.enter="search"
+        :disabled="loading"
+        ref="searchInput"
+      />
+      <button class="search-btn" @click="search" :disabled="loading || !query.trim()">
+        <span v-if="loading"><span class="spin"></span> Analyzing…</span>
+        <span v-else">🔍 Search</span>
+      </button>
+    </div>
+    <div class="chips">
+      <button v-for="chip in EXAMPLE_CHIPS" :key="chip.label"
+              class="chip" :class="chip.type" @click="useChip(chip.label)">
+        {{ chip.label }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Pre-search hero -->
+  <div class="hero" v-if="!hasSearched && !loading">
+    <h2>Find good actors. Expose bad ones.</h2>
+    <p>Ask in plain English. Our AI generates the SQL, queries 23M+ rows across 3 government datasets, and synthesizes a plain-language accountability report — in seconds.</p>
+    <div class="stats-row">
+      <div class="stat-item"><div class="num">851K</div><div class="lab">Resolved Entities</div></div>
+      <div class="stat-item"><div class="num">3</div><div class="lab">Gov't Datasets</div></div>
+      <div class="stat-item"><div class="num">23M+</div><div class="lab">Data Rows</div></div>
+      <div class="stat-item"><div class="num">$486B</div><div class="lab">Gov't Spend Tracked</div></div>
+    </div>
+  </div>
+
+  <!-- Loading skeletons -->
+  <div v-if="loading">
+    <div class="results-meta skeleton" style="height:20px; width:260px; background:var(--border); border-radius:4px; margin-bottom:16px;"></div>
+    <div class="skel-card skeleton" v-for="i in 4" :key="i">
+      <div class="skel-line title"></div>
+      <div class="skel-line short"></div>
+      <div style="height:10px;"></div>
+      <div class="skel-line full"></div>
+      <div class="skel-line w80"></div>
+      <div class="skel-line w60"></div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" v-if="error">⚠️ {{ error }}</div>
+
+  <!-- Results -->
+  <div v-if="!loading && results.length > 0">
+
+    <!-- Meta bar -->
+    <div class="results-meta">
+      <span>Found <strong>{{ meta.total_found }}</strong> entities</span>
+      <span class="mode-badge" :class="meta.mode === 'bad_actor' ? 'bad' : meta.mode === 'good_actor' ? 'good' : 'mixed'">
+        {{ meta.mode === 'bad_actor' ? '🚩 Bad Actor Mode' : meta.mode === 'good_actor' ? '✅ Good Actor Mode' : '🔀 Cross-Dataset' }}
+      </span>
+      <span>Sorted by {{ meta.mode === 'good_actor' ? 'efficiency score' : 'risk score' }}</span>
+      <button class="sql-toggle" @click="showSql = !showSql">{{ showSql ? '▲ Hide SQL' : '▼ Show generated SQL' }}</button>
+    </div>
+
+    <!-- SQL box -->
+    <div class="sql-box" v-if="showSql">{{ meta.sql_generated }}</div>
+
+    <!-- Cards -->
+    <div v-for="r in results" :key="r.id" class="result-card"
+         :class="cardClass(r)">
+
+      <!-- Card header -->
+      <div class="card-header">
+        <span class="card-icon">{{ cardIcon(r) }}</span>
+        <span class="card-name">{{ r.canonical_name }}</span>
+        <span class="score-badge" :class="scoreBadgeClass(r)">
+          {{ r.score }}/{{ r.score_max }} · {{ r.score_label }}
+        </span>
+      </div>
+
+      <!-- Meta row -->
+      <div class="card-meta">
+        <span>BN: {{ r.bn_root }}</span>
+        <span>
+          <span v-for="src in r.dataset_sources" :key="src" class="source-pill" :class="src">
+            {{ src.toUpperCase() }}
+          </span>
+        </span>
+      </div>
+
+      <!-- Policy Pulse -->
+      <div class="policy-pulse" :class="r.policy_pulse.alignment">
+        <span class="pp-badge">
+          {{ r.policy_pulse.alignment === 'aligned' ? '🟢 Policy Aligned' :
+             r.policy_pulse.alignment === 'misaligned' ? '🔴 Funding Risk' : '🟡 Monitor' }}
+        </span>
+        <span class="pp-note">
+          <span class="pp-area">{{ r.policy_pulse.priority_area }}</span> —
+          {{ r.policy_pulse.policy_note }}
+        </span>
+      </div>
+
+      <!-- Narrative -->
+      <div class="card-narrative">{{ r.narrative }}</div>
+
+      <!-- Flags -->
+      <div class="card-flags">
+        <span v-for="flag in r.flags" :key="flag"
+              class="flag-pill" :class="flagClass(r, flag)">
+          {{ flagIcon(r) }} {{ flag }}
+        </span>
+      </div>
+
+      <!-- Actions -->
+      <div class="card-actions">
+        <button class="action-btn"
+                @click="toggleWebIntel(r)"
+                :disabled="webIntelLoading[r.id]">
+          <span v-if="webIntelLoading[r.id]"><span class="spin"></span> Searching web…</span>
+          <span v-else-if="webIntel[r.id]">🌐 {{ webIntelOpen[r.id] ? 'Hide' : 'Show' }} Web Intelligence</span>
+          <span v-else>🌐 Check Web Intelligence</span>
+        </button>
+        <a class="action-btn primary" :href="'dossier.html?id=' + r.id" target="_blank">
+          View Full Dossier →
+        </a>
+      </div>
+
+      <!-- Web Intel Panel -->
+      <div class="web-intel-panel" v-if="webIntel[r.id] && webIntelOpen[r.id]">
+        <h4>🌐 Web Intelligence Report</h4>
+        <div class="registry">🏛️ Registry: {{ webIntel[r.id].registry_status }}</div>
+
+        <div class="news-item" v-for="item in webIntel[r.id].news_mentions" :key="item.headline"
+             :class="item.sentiment">
+          <span class="news-icon"></span>
+          <div class="news-body">
+            <div class="news-headline">{{ item.headline }}</div>
+            <div class="news-source">{{ item.source }} · {{ item.date }}</div>
+          </div>
+        </div>
+
+        <div class="web-flags">
+          <div v-for="flag in webIntel[r.id].red_flags_found" :key="flag" class="web-flag bad">🚩 {{ flag }}</div>
+          <div v-for="sig in webIntel[r.id].positive_signals" :key="sig" class="web-flag good">✅ {{ sig }}</div>
+        </div>
+
+        <div class="web-summary" v-if="webIntel[r.id].web_summary">
+          "{{ webIntel[r.id].web_summary }}"
+        </div>
+      </div>
+
+    </div>
+    <!-- end cards -->
+
+  </div>
+  <!-- end results -->
+
+</div>
+</div>
+
+<script>
+const { createApp, ref, reactive, computed, nextTick } = Vue;
+
+const EXAMPLE_CHIPS = [
+  { label: 'Environmental charities with circular funding', type: 'bad' },
+  { label: 'Housing recipients with high overhead', type: 'bad' },
+  { label: 'High-performing Indigenous education programs', type: 'good' },
+  { label: 'Efficient mental health charities', type: 'good' },
+  { label: 'Federal + Alberta sole-source dual recipients', type: 'cross' },
+];
+
+createApp({
+  setup() {
+    const dark = ref(false);
+    const query = ref('');
+    const loading = ref(false);
+    const hasSearched = ref(false);
+    const results = ref([]);
+    const meta = reactive({ mode: '', total_found: 0, sql_generated: '', query: '' });
+    const showSql = ref(false);
+    const error = ref('');
+    const searchInput = ref(null);
+
+    const webIntel = reactive({});
+    const webIntelLoading = reactive({});
+    const webIntelOpen = reactive({});
+
+    function toggleTheme() {
+      dark.value = !dark.value;
+      document.documentElement.classList.toggle('dark', dark.value);
+    }
+
+    function useChip(label) {
+      query.value = label;
+      nextTick(() => search());
+    }
+
+    async function search() {
+      const q = query.value.trim();
+      if (!q || loading.value) return;
+      loading.value = true;
+      hasSearched.value = true;
+      error.value = '';
+      results.value = [];
+      showSql.value = false;
+
+      // Clear web intel on new search
+      Object.keys(webIntel).forEach(k => delete webIntel[k]);
+      Object.keys(webIntelLoading).forEach(k => delete webIntelLoading[k]);
+      Object.keys(webIntelOpen).forEach(k => delete webIntelOpen[k]);
+
+      try {
+        const res = await fetch('/api/ai-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: q })
+        });
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        const data = await res.json();
+        results.value = data.results || [];
+        meta.mode = data.mode;
+        meta.total_found = data.total_found;
+        meta.sql_generated = data.sql_generated;
+        meta.query = data.query;
+      } catch (e) {
+        error.value = e.message || 'Search failed. Is the mock server running?';
+      } finally {
+        loading.value = false;
+      }
+    }
+
+    async function toggleWebIntel(r) {
+      // If already loaded, just toggle visibility
+      if (webIntel[r.id]) {
+        webIntelOpen[r.id] = !webIntelOpen[r.id];
+        return;
+      }
+      // Fetch
+      webIntelLoading[r.id] = true;
+      try {
+        const res = await fetch(`/api/entity/${r.bn_root}/web-intel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ canonical_name: r.canonical_name, sector: r.policy_pulse.priority_area })
+        });
+        if (!res.ok) throw new Error(`Web intel error: ${res.status}`);
+        const data = await res.json();
+        webIntel[r.id] = data;
+        webIntelOpen[r.id] = true;
+      } catch (e) {
+        webIntel[r.id] = {
+          news_mentions: [],
+          registry_status: 'Could not retrieve — check connection',
+          red_flags_found: [],
+          positive_signals: [],
+          web_summary: 'Web intelligence lookup failed. ' + e.message
+        };
+        webIntelOpen[r.id] = true;
+      } finally {
+        webIntelLoading[r.id] = false;
+      }
+    }
+
+    function cardClass(r) {
+      const mode = meta.mode;
+      if (mode === 'bad_actor') return 'bad';
+      if (mode === 'good_actor') return 'good';
+      return 'mixed';
+    }
+
+    function cardIcon(r) {
+      if (meta.mode === 'bad_actor') return '🚩';
+      if (meta.mode === 'good_actor') return '✅';
+      return r.score > 20 ? '⚠️' : '🔀';
+    }
+
+    function scoreBadgeClass(r) {
+      const label = r.score_label.toLowerCase().replace(/\s+/g, '-');
+      return label;
+    }
+
+    function flagClass(r, flag) {
+      if (meta.mode === 'good_actor') return 'good';
+      if (meta.mode === 'bad_actor') return 'bad';
+      // mixed: guess by content
+      if (/\$|funding|grants|revenue|federal|ab/i.test(flag)) return 'neutral';
+      return 'bad';
+    }
+
+    function flagIcon(r) {
+      return meta.mode === 'good_actor' ? '✅' : '🚩';
+    }
+
+    return {
+      dark, query, loading, hasSearched, results, meta, showSql, error, searchInput,
+      webIntel, webIntelLoading, webIntelOpen,
+      EXAMPLE_CHIPS,
+      toggleTheme, useChip, search, toggleWebIntel,
+      cardClass, cardIcon, scoreBadgeClass, flagClass, flagIcon
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

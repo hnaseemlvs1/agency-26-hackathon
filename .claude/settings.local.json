@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node visualizations/mock-server.js)",
+      "Bash(curl -s -X POST http://localhost:3802/api/ai-search -H \"Content-Type: application/json\" -d '{\"query\":\"indigenous education\"}')",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('mode:', d['mode'], '| results:', len\\(d['results']\\), '| first:', d['results'][0]['canonical_name']\\)\")",
+      "Bash(node -e \"const d=require\\('/dev/stdin'\\); process.stdin.resume\\(\\); let s=''; process.stdin.on\\('data',c=>s+=c\\); process.stdin.on\\('end',\\(\\)=>{const d=JSON.parse\\(s\\);console.log\\('mode:',d.mode,'results:',d.results.length,'first:',d.results[0].canonical_name\\)}\\)\")",
+      "Bash(node -e \"let s=''; process.stdin.on\\('data',c=>s+=c\\); process.stdin.on\\('end',\\(\\)=>{const d=JSON.parse\\(s\\); console.log\\('mode:', d.mode\\); console.log\\('results:', d.results.length\\); console.log\\('first:', d.results[0].canonical_name\\); console.log\\('score:', d.results[0].score+'/'+d.results[0].score_max\\);}\\)\")",
+      "Bash(curl -s -X POST http://localhost:3802/api/ai-search -H \"Content-Type: application/json\" -d '{\"query\":\"environmental circular funding bad actors\"}')",
+      "Bash(node -e \"let s=''; process.stdin.on\\('data',c=>s+=c\\); process.stdin.on\\('end',\\(\\)=>{const d=JSON.parse\\(s\\); console.log\\('mode:', d.mode\\); console.log\\('results:', d.results.length\\); console.log\\('first:', d.results[0].canonical_name, '| score:', d.results[0].score\\);}\\)\")",
+      "Bash(curl -s -X POST http://localhost:3802/api/entity/847291630/web-intel -H \"Content-Type: application/json\" -d '{\"canonical_name\":\"Green Future Foundation\",\"sector\":\"Climate\"}')",
+      "Bash(node -e \"let s=''; process.stdin.on\\('data',c=>s+=c\\); process.stdin.on\\('end',\\(\\)=>{const d=JSON.parse\\(s\\); console.log\\('news count:', d.news_mentions.length\\); console.log\\('flags:', d.red_flags_found.length\\); console.log\\('first headline:', d.news_mentions[0].headline\\);}\\)\")",
+      "Bash(pkill -f \"mock-server.js\")",
+      "Bash(taskkill //PID 35724 //F)"
+    ]
+  }
+}

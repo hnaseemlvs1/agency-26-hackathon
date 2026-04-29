@@ -2,458 +2,1007 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Government Intelligence Search</title>
+<title>Public Funding Intelligence | Long View Systems</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 <style>
+  /* ─── Long View Systems design tokens ──────────────────────────────── */
   :root {
-    --bg: #f6f8fa; --surface: #ffffff; --surface-2: #f0f3f6;
-    --border: #d0d7de; --text: #1f2328; --muted: #57606a; --accent: #0969da;
-    --accent-2: #8250df; --ok: #1a7f37; --warn: #bf8700; --err: #cf222e;
-    --shadow: 0 1px 3px rgba(0,0,0,0.06);
-    --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
+    --lv-green: #2da82c;
+    --lv-green-2: #34c134;
+    --lv-green-dark: #1f7d1f;
+    --lv-green-bg: rgba(45, 168, 44, 0.08);
+
+    --lv-navy: #0f2236;
+    --lv-navy-2: #16314a;
+    --lv-navy-3: #1f3d5c;
+
+    --lv-bg: #f5f7fa;
+    --lv-surface: #ffffff;
+    --lv-surface-2: #f9fafc;
+    --lv-surface-3: #f0f3f6;
+
+    --lv-border: #e1e6ed;
+    --lv-border-2: #d0d7de;
+
+    --lv-text: #1a2332;
+    --lv-text-2: #2d3748;
+    --lv-muted: #5c6b7f;
+    --lv-muted-2: #8392a5;
+
+    --lv-warn: #d97706;
+    --lv-warn-bg: rgba(217, 119, 6, 0.08);
+    --lv-err: #dc2626;
+    --lv-err-bg: rgba(220, 38, 38, 0.07);
+    --lv-err-border: rgba(220, 38, 38, 0.2);
+    --lv-info: #2563eb;
+    --lv-info-bg: rgba(37, 99, 235, 0.08);
+    --lv-purple: #7c3aed;
+    --lv-purple-bg: rgba(124, 58, 237, 0.08);
+
+    --shadow-sm: 0 1px 2px rgba(15, 30, 46, 0.05);
+    --shadow-md: 0 2px 8px rgba(15, 30, 46, 0.08);
+    --shadow-lg: 0 8px 24px rgba(15, 30, 46, 0.12);
+
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 10px;
+    --radius-xl: 12px;
   }
+
   html.dark {
-    --bg: #0d1117; --surface: #161b22; --surface-2: #1c2128;
-    --border: #30363d; --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff;
-    --accent-2: #bc8cff; --ok: #3fb950; --warn: #d29922; --err: #f85149;
-    --shadow: 0 1px 3px rgba(0,0,0,0.3);
-    --shadow-lg: 0 4px 16px rgba(0,0,0,0.4);
+    --lv-bg: #0a0f15;
+    --lv-surface: #131a23;
+    --lv-surface-2: #1a232f;
+    --lv-surface-3: #232d3a;
+    --lv-border: #2a3441;
+    --lv-border-2: #3a4453;
+    --lv-text: #e6edf3;
+    --lv-text-2: #cdd6df;
+    --lv-muted: #8392a5;
+    --lv-muted-2: #6b7a8d;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
   }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-         background: var(--bg); color: var(--text); min-height: 100vh; }
+  body {
+    font: 14px/1.5 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--lv-bg);
+    color: var(--lv-text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input { font-family: inherit; }
 
-  /* ── Layout ── */
-  .app { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
-
-  /* ── Header ── */
-  .header { display: flex; justify-content: space-between; align-items: flex-start;
-            margin-bottom: 28px; gap: 12px; }
-  .header-left h1 { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.2; }
-  .header-left p { font-size: 13px; color: var(--muted); margin-top: 4px; }
-  .header-left .breadcrumb { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-  .header-left .breadcrumb a { color: var(--accent); text-decoration: none; }
-  .theme-btn { padding: 7px 13px; border: 1px solid var(--border); background: var(--surface);
-               color: var(--text); border-radius: 6px; cursor: pointer; font-size: 12px;
-               white-space: nowrap; flex-shrink: 0; }
-  .theme-btn:hover { background: var(--surface-2); }
-
-  /* ── Search bar ── */
-  .search-area { margin-bottom: 16px; }
-  .search-row { display: flex; gap: 10px; }
-  .search-row input {
-    flex: 1; padding: 12px 16px; border: 1px solid var(--border);
-    background: var(--surface); color: var(--text); border-radius: 8px;
-    font-size: 15px; box-shadow: var(--shadow);
-    transition: border-color 0.15s, box-shadow 0.15s;
-  }
-  .search-row input:focus { outline: none; border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(9,105,218,0.12); }
-  .search-row input::placeholder { color: var(--muted); }
-  .search-btn {
-    padding: 12px 20px; background: var(--accent); color: #fff;
-    border: none; border-radius: 8px; cursor: pointer; font-size: 14px;
-    font-weight: 600; white-space: nowrap; transition: opacity 0.15s;
-  }
-  .search-btn:hover { opacity: 0.88; }
-  .search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* ── Example chips ── */
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-  .chip {
-    padding: 5px 12px; border: 1px solid var(--border); border-radius: 20px;
-    font-size: 12px; color: var(--muted); cursor: pointer; background: var(--surface);
-    transition: all 0.15s;
-  }
-  .chip:hover { border-color: var(--accent); color: var(--accent); background: var(--surface-2); }
-  .chip.bad { border-color: #cf222e40; color: var(--err); }
-  .chip.bad:hover { background: #cf222e0a; }
-  .chip.good { border-color: #1a7f3740; color: var(--ok); }
-  .chip.good:hover { background: #1a7f370a; }
-  .chip.cross { border-color: #8250df40; color: var(--accent-2); }
-  .chip.cross:hover { background: #8250df0a; }
-
-  /* ── Results meta bar ── */
-  .results-meta {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
-    font-size: 13px; color: var(--muted); flex-wrap: wrap;
-  }
-  .mode-badge {
-    display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px;
-    border-radius: 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-  .mode-badge.bad { background: #cf222e15; color: var(--err); border: 1px solid #cf222e30; }
-  .mode-badge.good { background: #1a7f3715; color: var(--ok); border: 1px solid #1a7f3730; }
-  .mode-badge.mixed { background: #8250df15; color: var(--accent-2); border: 1px solid #8250df30; }
-  .sql-toggle {
-    font-size: 12px; color: var(--accent); cursor: pointer;
-    background: none; border: none; padding: 0; font-family: inherit;
-  }
-  .sql-toggle:hover { text-decoration: underline; }
-  .export-btn {
-    margin-left: auto; font-size: 12px; padding: 4px 10px; border-radius: 5px;
-    border: 1px solid var(--border); background: var(--surface); color: var(--muted);
-    cursor: pointer; font-family: inherit; transition: all 0.15s;
-  }
-  .export-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--surface-2); }
-  .sql-box {
-    background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
-    padding: 12px 14px; font-size: 12px; font-family: ui-monospace, "Cascadia Code", monospace;
-    color: var(--text); white-space: pre; overflow-x: auto; margin-bottom: 16px;
-    line-height: 1.6;
+  /* ─── Top navigation (dark navy bar) ───────────────────────────────── */
+  .top-nav {
+    background: var(--lv-navy);
+    color: #fff;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
   }
 
-  /* ── Result card ── */
-  .result-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    margin-bottom: 14px; box-shadow: var(--shadow); overflow: hidden;
-    transition: box-shadow 0.15s;
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
   }
-  .result-card:hover { box-shadow: var(--shadow-lg); }
-  .result-card.bad { border-left: 4px solid var(--err); }
-  .result-card.good { border-left: 4px solid var(--ok); }
-  .result-card.mixed { border-left: 4px solid var(--accent-2); }
+  .brand-logo {
+    width: 32px; height: 32px;
+    background: var(--lv-green);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .brand-logo svg { display: block; }
+  .brand-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  .brand-divider {
+    width: 1px;
+    height: 22px;
+    background: rgba(255, 255, 255, 0.18);
+    margin: 0 4px;
+  }
+  .product-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.92);
+  }
 
-  .card-header {
-    display: flex; align-items: center; gap: 12px; padding: 14px 18px 10px;
+  .nav-tabs {
+    display: flex;
+    gap: 2px;
+    margin-left: 24px;
+    height: 56px;
+  }
+  .nav-tab {
+    height: 56px;
+    padding: 0 14px;
+    color: rgba(255, 255, 255, 0.65);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .nav-tab:hover { color: rgba(255, 255, 255, 0.9); }
+  .nav-tab.active { color: #fff; border-bottom-color: var(--lv-green); font-weight: 600; }
+
+  .nav-spacer { flex: 1; }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .demo-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--lv-navy-2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.92);
+    cursor: default;
+  }
+  .demo-pill .dot {
+    width: 7px; height: 7px;
+    background: var(--lv-green-2);
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(52, 193, 52, 0.6);
+  }
+  .icon-btn {
+    width: 34px; height: 34px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .icon-btn:hover { background: var(--lv-navy-2); color: #fff; }
+  .user-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--lv-green);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* ─── Page container ───────────────────────────────────────────────── */
+  .app {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 28px 24px 64px;
+  }
+
+  /* ─── Page header ──────────────────────────────────────────────────── */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    gap: 16px;
     flex-wrap: wrap;
   }
-  .card-icon { font-size: 18px; flex-shrink: 0; }
-  .card-name { font-size: 16px; font-weight: 700; color: var(--text); flex: 1; min-width: 160px; }
-  .score-badge {
-    display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px;
-    border-radius: 6px; font-size: 12px; font-weight: 700; flex-shrink: 0;
+  .page-title h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--lv-text);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
   }
-  .score-badge.high-risk { background: #cf222e15; color: var(--err); border: 1px solid #cf222e30; }
-  .score-badge.elevated { background: #bf870015; color: var(--warn); border: 1px solid #bf870030; }
-  .score-badge.moderate { background: #bf870008; color: var(--warn); border: 1px solid #bf870020; }
-  .score-badge.exemplary { background: #1a7f3715; color: var(--ok); border: 1px solid #1a7f3730; }
-  .score-badge.high-performing { background: #1a7f3710; color: var(--ok); border: 1px solid #1a7f3720; }
+  .page-title .subtitle {
+    font-size: 14px;
+    color: var(--lv-muted);
+    margin-top: 6px;
+    max-width: 720px;
+  }
+  .page-action {
+    background: var(--lv-green);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .page-action:hover { background: var(--lv-green-dark); }
 
-  .card-meta { padding: 0 18px 8px; font-size: 12px; color: var(--muted);
-               display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+  /* ─── KPI strip ────────────────────────────────────────────────────── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 900px) {
+    .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 540px) {
+    .kpi-strip { grid-template-columns: 1fr; }
+  }
+  .kpi-card {
+    background: var(--lv-surface);
+    border: 1px solid var(--lv-border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px 20px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: var(--lv-green);
+  }
+  .kpi-card.amber::before { background: var(--lv-warn); }
+  .kpi-card.purple::before { background: var(--lv-purple); }
+  .kpi-card.blue::before { background: var(--lv-info); }
+
+  .kpi-icon {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 32px; height: 32px;
+    border-radius: var(--radius-sm);
+    background: var(--lv-green-bg);
+    color: var(--lv-green);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .kpi-card.amber .kpi-icon { background: var(--lv-warn-bg); color: var(--lv-warn); }
+  .kpi-card.purple .kpi-icon { background: var(--lv-purple-bg); color: var(--lv-purple); }
+  .kpi-card.blue .kpi-icon { background: var(--lv-info-bg); color: var(--lv-info); }
+
+  .kpi-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--lv-muted);
+    margin-bottom: 6px;
+    padding-right: 40px;
+  }
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--lv-text);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--lv-muted-2);
+    margin-top: 6px;
+  }
+
+  /* ─── Search section ──────────────────────────────────────────────── */
+  .search-section {
+    background: var(--lv-surface);
+    border: 1px solid var(--lv-border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .search-row { display: flex; gap: 10px; align-items: stretch; }
+  .search-input {
+    flex: 1;
+    padding: 12px 16px;
+    background: var(--lv-surface);
+    color: var(--lv-text);
+    border: 1px solid var(--lv-border-2);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .search-input:focus {
+    outline: none;
+    border-color: var(--lv-green);
+    box-shadow: 0 0 0 3px rgba(45, 168, 44, 0.12);
+  }
+  .search-input::placeholder { color: var(--lv-muted-2); }
+  .search-btn {
+    min-width: 132px;
+    padding: 12px 20px;
+    background: var(--lv-green);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.15s, opacity 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .search-btn:hover:not(:disabled) { background: var(--lv-green-dark); }
+  .search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .chip {
+    padding: 6px 12px;
+    background: var(--lv-surface-2);
+    border: 1px solid var(--lv-border);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--lv-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .chip:hover { border-color: var(--lv-green); color: var(--lv-green); background: var(--lv-green-bg); }
+  .chip.bad { border-color: var(--lv-err-border); color: var(--lv-err); background: var(--lv-err-bg); }
+  .chip.bad:hover { background: rgba(220, 38, 38, 0.12); }
+  .chip.good { border-color: rgba(45, 168, 44, 0.25); color: var(--lv-green-dark); background: var(--lv-green-bg); }
+  .chip.good:hover { background: rgba(45, 168, 44, 0.14); }
+  .chip.cross { border-color: rgba(124, 58, 237, 0.25); color: var(--lv-purple); background: var(--lv-purple-bg); }
+  .chip.cross:hover { background: rgba(124, 58, 237, 0.14); }
+
+  /* ─── Results meta ─────────────────────────────────────────────────── */
+  .results-section { margin-top: 8px; }
+  .results-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--lv-muted);
+    flex-wrap: wrap;
+  }
+  .mode-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 11px;
+    border-radius: 14px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .mode-badge.bad { background: var(--lv-err-bg); color: var(--lv-err); border: 1px solid var(--lv-err-border); }
+  .mode-badge.good { background: var(--lv-green-bg); color: var(--lv-green-dark); border: 1px solid rgba(45, 168, 44, 0.25); }
+  .mode-badge.mixed { background: var(--lv-purple-bg); color: var(--lv-purple); border: 1px solid rgba(124, 58, 237, 0.25); }
+
+  .sql-toggle {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--lv-info);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+  }
+  .sql-toggle:hover { background: var(--lv-info-bg); }
+  .sql-box {
+    background: var(--lv-navy);
+    color: #c5d6e8;
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    font-size: 12px;
+    font-family: ui-monospace, "Cascadia Code", "Fira Code", monospace;
+    white-space: pre;
+    overflow-x: auto;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .sql-box .sql-note {
+    color: var(--lv-muted-2);
+    font-style: italic;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  /* ─── Result cards ─────────────────────────────────────────────────── */
+  .result-card {
+    background: var(--lv-surface);
+    border: 1px solid var(--lv-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    position: relative;
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .result-card:hover { box-shadow: var(--shadow-md); border-color: var(--lv-border-2); }
+  .result-card.bad { border-left: 4px solid var(--lv-err); }
+  .result-card.good { border-left: 4px solid var(--lv-green); }
+  .result-card.mixed { border-left: 4px solid var(--lv-purple); }
+
+  .card-top {
+    padding: 16px 20px 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .card-icon-bubble {
+    width: 36px; height: 36px;
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .card-icon-bubble.bad { background: var(--lv-err-bg); }
+  .card-icon-bubble.good { background: var(--lv-green-bg); }
+  .card-icon-bubble.mixed { background: var(--lv-purple-bg); }
+
+  .card-id { flex: 1; min-width: 220px; }
+  .card-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--lv-text);
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--lv-muted);
+  }
   .source-pill {
-    display: inline-block; padding: 1px 7px; border-radius: 4px;
-    font-size: 11px; font-weight: 600;
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
   }
-  .source-pill.cra { background: #0969da15; color: var(--accent); border: 1px solid #0969da30; }
-  .source-pill.fed { background: #8250df15; color: var(--accent-2); border: 1px solid #8250df30; }
-  .source-pill.ab  { background: #1a7f3715; color: var(--ok); border: 1px solid #1a7f3730; }
+  .source-pill.cra { background: var(--lv-info-bg); color: var(--lv-info); border: 1px solid rgba(37, 99, 235, 0.2); }
+  .source-pill.fed { background: var(--lv-purple-bg); color: var(--lv-purple); border: 1px solid rgba(124, 58, 237, 0.2); }
+  .source-pill.ab  { background: var(--lv-warn-bg); color: var(--lv-warn); border: 1px solid rgba(217, 119, 6, 0.2); }
 
-  /* ── Policy Pulse ── */
+  .score-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .score-badge.high-risk { background: var(--lv-err-bg); color: var(--lv-err); border: 1px solid var(--lv-err-border); }
+  .score-badge.elevated-risk { background: var(--lv-warn-bg); color: var(--lv-warn); border: 1px solid rgba(217, 119, 6, 0.2); }
+  .score-badge.moderate-risk { background: var(--lv-warn-bg); color: var(--lv-warn); border: 1px solid rgba(217, 119, 6, 0.15); }
+  .score-badge.exemplary { background: var(--lv-green-bg); color: var(--lv-green-dark); border: 1px solid rgba(45, 168, 44, 0.25); }
+  .score-badge.high-performing { background: var(--lv-green-bg); color: var(--lv-green-dark); border: 1px solid rgba(45, 168, 44, 0.2); }
+
+  /* ─── Policy Pulse ─────────────────────────────────────────────────── */
   .policy-pulse {
-    margin: 6px 18px 8px; padding: 7px 12px; border-radius: 6px;
-    display: flex; align-items: flex-start; gap: 8px; font-size: 12px;
+    margin: 0 20px 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 12px;
+    line-height: 1.5;
   }
-  .policy-pulse.aligned { background: #1a7f3710; border: 1px solid #1a7f3730; }
-  .policy-pulse.misaligned { background: #cf222e0a; border: 1px solid #cf222e25; }
-  .policy-pulse.neutral { background: #bf870008; border: 1px solid #bf870025; }
-  .policy-pulse .pp-badge {
-    font-weight: 700; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
-    padding: 2px 7px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;
+  .policy-pulse.aligned { background: var(--lv-green-bg); border: 1px solid rgba(45, 168, 44, 0.2); }
+  .policy-pulse.misaligned { background: var(--lv-err-bg); border: 1px solid var(--lv-err-border); }
+  .policy-pulse.neutral { background: var(--lv-warn-bg); border: 1px solid rgba(217, 119, 6, 0.2); }
+  .pp-badge {
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
-  .policy-pulse.aligned .pp-badge { background: #1a7f3720; color: var(--ok); }
-  .policy-pulse.misaligned .pp-badge { background: #cf222e20; color: var(--err); }
-  .policy-pulse.neutral .pp-badge { background: #bf870020; color: var(--warn); }
-  .policy-pulse .pp-note { color: var(--muted); line-height: 1.4; }
-  .policy-pulse .pp-area { font-weight: 600; color: var(--text); }
+  .policy-pulse.aligned .pp-badge { background: rgba(45, 168, 44, 0.18); color: var(--lv-green-dark); }
+  .policy-pulse.misaligned .pp-badge { background: rgba(220, 38, 38, 0.15); color: var(--lv-err); }
+  .policy-pulse.neutral .pp-badge { background: rgba(217, 119, 6, 0.15); color: var(--lv-warn); }
+  .pp-area { font-weight: 600; color: var(--lv-text); }
+  .pp-note { color: var(--lv-muted); }
 
-  /* ── Narrative ── */
-  .card-narrative { padding: 4px 18px 10px; font-size: 13px; color: var(--text); line-height: 1.6; }
-
-  /* ── Flags ── */
-  .card-flags { padding: 0 18px 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+  /* ─── Narrative + flags ────────────────────────────────────────────── */
+  .card-narrative {
+    padding: 0 20px 12px;
+    font-size: 14px;
+    color: var(--lv-text-2);
+    line-height: 1.6;
+  }
+  .card-flags {
+    padding: 0 20px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
   .flag-pill {
-    padding: 3px 9px; border-radius: 4px; font-size: 11px; font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
   }
-  .flag-pill.bad  { background: #cf222e0d; color: var(--err); border: 1px solid #cf222e25; }
-  .flag-pill.good { background: #1a7f370d; color: var(--ok); border: 1px solid #1a7f3725; }
-  .flag-pill.neutral { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+  .flag-pill.bad { background: var(--lv-err-bg); color: var(--lv-err); border: 1px solid var(--lv-err-border); }
+  .flag-pill.good { background: var(--lv-green-bg); color: var(--lv-green-dark); border: 1px solid rgba(45, 168, 44, 0.2); }
+  .flag-pill.neutral { background: var(--lv-surface-3); color: var(--lv-muted); border: 1px solid var(--lv-border); }
 
-  /* ── Card actions ── */
+  /* ─── Card actions ─────────────────────────────────────────────────── */
   .card-actions {
-    padding: 10px 18px 14px; display: flex; gap: 10px; flex-wrap: wrap;
-    border-top: 1px solid var(--border); background: var(--surface-2);
+    padding: 12px 20px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    background: var(--lv-surface-2);
+    border-top: 1px solid var(--lv-border);
   }
   .action-btn {
-    padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
-    cursor: pointer; border: 1px solid var(--border); background: var(--surface);
-    color: var(--text); transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 13px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--lv-border-2);
+    background: var(--lv-surface);
+    color: var(--lv-text-2);
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
   }
-  .action-btn:hover { background: var(--surface-2); border-color: var(--accent); color: var(--accent); }
-  .action-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .action-btn.primary:hover { opacity: 0.85; color: #fff; }
+  .action-btn:hover { background: var(--lv-surface-3); border-color: var(--lv-green); color: var(--lv-green); }
+  .action-btn.primary {
+    background: var(--lv-green);
+    color: #fff;
+    border-color: var(--lv-green);
+  }
+  .action-btn.primary:hover { background: var(--lv-green-dark); border-color: var(--lv-green-dark); color: #fff; }
   .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  /* ── Web Intel Panel ── */
+  /* ─── Web Intel panel ──────────────────────────────────────────────── */
   .web-intel-panel {
-    margin: 0 18px 14px; padding: 14px; border-radius: 8px;
-    background: var(--surface-2); border: 1px solid var(--border);
+    margin: 0 20px 16px;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    background: var(--lv-surface-2);
+    border: 1px solid var(--lv-border);
   }
-  .web-intel-panel h4 { font-size: 12px; font-weight: 700; color: var(--muted);
-    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
-  .web-intel-panel .registry { font-size: 12px; color: var(--muted); margin-bottom: 10px;
-    padding: 6px 10px; background: var(--surface); border-radius: 4px; border: 1px solid var(--border); }
-  .news-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 7px;
-               font-size: 12px; }
-  .news-item .news-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .web-intel-panel h4 {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--lv-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+  }
+  .web-intel-panel .registry {
+    font-size: 12px;
+    color: var(--lv-muted);
+    margin-bottom: 12px;
+    padding: 8px 11px;
+    background: var(--lv-surface);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--lv-border);
+  }
+  .news-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  .news-item .news-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
   .news-item .news-body { flex: 1; }
-  .news-item .news-headline { font-weight: 600; color: var(--text); line-height: 1.3; }
-  .news-item .news-source { color: var(--muted); font-size: 11px; margin-top: 1px; }
+  .news-item .news-headline {
+    font-weight: 600;
+    color: var(--lv-text);
+    line-height: 1.4;
+  }
+  .news-item .news-source {
+    color: var(--lv-muted-2);
+    font-size: 11px;
+    margin-top: 2px;
+  }
   .news-item.positive .news-icon::before { content: '✅'; }
   .news-item.negative .news-icon::before { content: '📰'; }
   .news-item.neutral  .news-icon::before { content: '📄'; }
-  .web-flags { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
-  .web-flag { font-size: 12px; padding: 4px 8px; border-radius: 4px; }
-  .web-flag.bad  { background: #cf222e0d; color: var(--err); border: 1px solid #cf222e20; }
-  .web-flag.good { background: #1a7f370d; color: var(--ok); border: 1px solid #1a7f3720; }
-  .web-summary { margin-top: 10px; padding: 8px 10px; background: var(--surface);
-    border-radius: 4px; border: 1px solid var(--border); font-size: 12px;
-    color: var(--muted); line-height: 1.6; font-style: italic; }
 
-  /* ── Skeleton loading ── */
+  .web-flags { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .web-flag {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+  }
+  .web-flag.bad { background: var(--lv-err-bg); color: var(--lv-err); border: 1px solid var(--lv-err-border); }
+  .web-flag.good { background: var(--lv-green-bg); color: var(--lv-green-dark); border: 1px solid rgba(45, 168, 44, 0.2); }
+
+  .web-summary {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: var(--lv-surface);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--lv-border);
+    font-size: 12px;
+    color: var(--lv-text-2);
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  /* ─── Skeletons & states ───────────────────────────────────────────── */
   .skeleton { animation: pulse 1.4s ease-in-out infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
   .skel-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    margin-bottom: 14px; padding: 18px; box-shadow: var(--shadow);
+    background: var(--lv-surface);
+    border: 1px solid var(--lv-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 14px;
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
   }
-  .skel-line {
-    height: 14px; background: var(--border); border-radius: 4px; margin-bottom: 10px;
-  }
+  .skel-line { height: 12px; background: var(--lv-border); border-radius: 4px; margin-bottom: 10px; }
   .skel-line.title { height: 18px; width: 55%; }
   .skel-line.short { width: 30%; }
   .skel-line.full  { width: 95%; }
   .skel-line.w80   { width: 80%; }
   .skel-line.w60   { width: 60%; }
 
-  /* ── Spinner ── */
-  .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid currentColor;
-          border-top-color: transparent; border-radius: 50%;
-          animation: spin 0.7s linear infinite; }
+  .spin {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── Empty/Error states ── */
-  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
-  .empty .empty-icon { font-size: 40px; margin-bottom: 12px; }
-  .empty h3 { font-size: 16px; color: var(--text); margin-bottom: 6px; }
-  .error-box { background: #cf222e0a; border: 1px solid #cf222e30; border-radius: 8px;
-               padding: 14px 16px; color: var(--err); font-size: 13px; margin-bottom: 16px; }
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--lv-muted);
+    background: var(--lv-surface);
+    border: 1px dashed var(--lv-border-2);
+    border-radius: var(--radius-lg);
+  }
+  .empty .empty-icon { font-size: 36px; margin-bottom: 14px; }
+  .empty h3 { font-size: 16px; color: var(--lv-text); margin-bottom: 8px; font-weight: 600; }
+  .empty p { font-size: 13px; max-width: 420px; margin: 0 auto; }
 
-  /* ── Hero area (pre-search) ── */
-  .hero { text-align: center; padding: 40px 0 36px; }
-  .hero h2 { font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
-  .hero p { font-size: 15px; color: var(--muted); max-width: 520px; margin: 0 auto 28px; }
-  .stats-row { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; margin-top: 28px; }
-  .stat-item { text-align: center; }
-  .stat-item .num { font-size: 24px; font-weight: 800; color: var(--text); }
-  .stat-item .lab { font-size: 11px; color: var(--muted); text-transform: uppercase;
-                    letter-spacing: 0.06em; margin-top: 2px; }
+  .error-box {
+    background: var(--lv-err-bg);
+    border: 1px solid var(--lv-err-border);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    color: var(--lv-err);
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
 
-  /* ── AI tag ── */
-  .ai-tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px;
-            font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-            background: linear-gradient(135deg, #0969da, #8250df);
-            color: #fff; margin-left: 8px; vertical-align: middle; }
-  @media print {
-    body { background: #fff; color: #000; font-size: 12px; }
-    .header-left p, .search-area, .chips, .results-meta .export-btn,
-    .results-meta .sql-toggle, .sql-box, .web-intel-btn, .web-intel-panel,
-    .theme-btn, .dossier-link { display: none !important; }
-    .app { max-width: 100%; padding: 0; }
-    .result-card { break-inside: avoid; border: 1px solid #ccc; margin-bottom: 12px;
-                   box-shadow: none; page-break-inside: avoid; }
-    .card-name { font-size: 14px; font-weight: 700; }
-    .narrative { font-size: 11px; }
-    .flag-pill { border: 1px solid #ccc; background: #f5f5f5; color: #333; }
-    .results-meta { font-size: 11px; }
-    .mode-badge { border: 1px solid #999; }
+  /* ─── Demo data ribbon (fold replaces fake data risk) ──────────────── */
+  .demo-ribbon {
+    background: var(--lv-warn-bg);
+    border: 1px solid rgba(217, 119, 6, 0.25);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--lv-warn);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .demo-ribbon strong { color: #b45309; }
+
+  /* ─── Footer ───────────────────────────────────────────────────────── */
+  .app-footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--lv-border);
+    font-size: 12px;
+    color: var(--lv-muted-2);
+    text-align: center;
   }
 </style>
 </head>
 <body>
 <div id="app">
-<div class="app">
 
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="breadcrumb">
-        <a href="/">🏛️ AI for Accountability</a> › Intelligence Search
+  <!-- ─── Top navigation ─────────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="brand">
+      <div class="brand-logo" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 9 L16 22 L23 9" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
-      <h1>Government Intelligence Search <span class="ai-tag">AI</span></h1>
-      <p>Natural language search across 851K resolved entities · CRA · Federal Grants · Alberta</p>
+      <span class="brand-name">Long View Systems</span>
+      <div class="brand-divider"></div>
+      <span class="product-name">Public Funding Intelligence</span>
     </div>
-    <button class="theme-btn" @click="toggleTheme">{{ dark ? '☀️ Light' : '🌙 Dark' }}</button>
-  </div>
 
-  <!-- Search bar -->
-  <div class="search-area">
-    <div class="search-row">
-      <input
-        v-model="query"
-        type="text"
-        placeholder="Ask anything — e.g. 'bad actors in housing funding' or 'high-performing Indigenous education charities'"
-        @keydown.enter="search"
-        :disabled="loading"
-        ref="searchInput"
-      />
-      <button class="search-btn" @click="search" :disabled="loading || !query.trim()">
-        <span v-if="loading"><span class="spin"></span> Analyzing…</span>
-        <span v-else">🔍 Search</span>
+    <div class="nav-tabs">
+      <a class="nav-tab active" href="search.html">Search</a>
+      <a class="nav-tab" href="dossier.html">Dossier</a>
+      <a class="nav-tab" href="heatmap.html">Heatmap</a>
+      <a class="nav-tab" href="/">Platform</a>
+    </div>
+
+    <div class="nav-spacer"></div>
+
+    <div class="nav-right">
+      <div class="demo-pill" title="This is a demonstration with curated examples">
+        <span class="dot"></span>
+        <span>Demo Mode</span>
+      </div>
+      <button class="icon-btn" @click="toggleTheme" :aria-label="dark ? 'Switch to light mode' : 'Switch to dark mode'" :aria-pressed="dark">
+        {{ dark ? '☀' : '◐' }}
       </button>
+      <div class="user-avatar" title="Michael Dunham">MD</div>
     </div>
-    <div class="chips">
-      <button v-for="chip in EXAMPLE_CHIPS" :key="chip.label"
-              class="chip" :class="chip.type" @click="useChip(chip.label)">
-        {{ chip.label }}
-      </button>
-    </div>
-  </div>
+  </nav>
 
-  <!-- Pre-search hero -->
-  <div class="hero" v-if="!hasSearched && !loading">
-    <h2>Find good actors. Expose bad ones.</h2>
-    <p>Ask in plain English. Our AI generates the SQL, queries 23M+ rows across 3 government datasets, and synthesizes a plain-language accountability report — in seconds.</p>
-    <div class="stats-row">
-      <div class="stat-item"><div class="num">851K</div><div class="lab">Resolved Entities</div></div>
-      <div class="stat-item"><div class="num">3</div><div class="lab">Gov't Datasets</div></div>
-      <div class="stat-item"><div class="num">23M+</div><div class="lab">Data Rows</div></div>
-      <div class="stat-item"><div class="num">$486B</div><div class="lab">Gov't Spend Tracked</div></div>
-    </div>
-  </div>
+  <!-- ─── Page body ─────────────────────────────────────────────── -->
+  <div class="app">
 
-  <!-- Loading skeletons -->
-  <div v-if="loading">
-    <div class="results-meta skeleton" style="height:20px; width:260px; background:var(--border); border-radius:4px; margin-bottom:16px;"></div>
-    <div class="skel-card skeleton" v-for="i in 4" :key="i">
-      <div class="skel-line title"></div>
-      <div class="skel-line short"></div>
-      <div style="height:10px;"></div>
-      <div class="skel-line full"></div>
-      <div class="skel-line w80"></div>
-      <div class="skel-line w60"></div>
-    </div>
-  </div>
-
-  <!-- Error -->
-  <div class="error-box" v-if="error">⚠️ {{ error }}</div>
-
-  <!-- Results -->
-  <div v-if="!loading && results.length > 0">
-
-    <!-- Meta bar -->
-    <div class="results-meta">
-      <span>Found <strong>{{ meta.total_found }}</strong> entities</span>
-      <span class="mode-badge" :class="meta.mode === 'bad_actor' ? 'bad' : meta.mode === 'good_actor' ? 'good' : 'mixed'">
-        {{ meta.mode === 'bad_actor' ? '🚩 Bad Actor Mode' : meta.mode === 'good_actor' ? '✅ Good Actor Mode' : '🔀 Cross-Dataset' }}
-      </span>
-      <span>Sorted by {{ meta.mode === 'good_actor' ? 'efficiency score' : 'risk score' }}</span>
-      <button class="sql-toggle" @click="showSql = !showSql">{{ showSql ? '▲ Hide SQL' : '▼ Show generated SQL' }}</button>
-      <button class="export-btn" @click="exportCSV" title="Download as CSV (opens in Excel)">⬇ CSV</button>
-      <button class="export-btn" @click="exportPDF" title="Print / Save as PDF">🖨 PDF</button>
-    </div>
-
-    <!-- SQL box -->
-    <div class="sql-box" v-if="showSql">{{ meta.sql_generated }}</div>
-
-    <!-- Cards -->
-    <div v-for="r in results" :key="r.id" class="result-card"
-         :class="cardClass(r)">
-
-      <!-- Card header -->
-      <div class="card-header">
-        <span class="card-icon">{{ cardIcon(r) }}</span>
-        <span class="card-name">{{ r.canonical_name }}</span>
-        <span class="score-badge" :class="scoreBadgeClass(r)">
-          {{ r.score }}/{{ r.score_max }} · {{ r.score_label }}
-        </span>
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="page-title">
+        <h1>Government Intelligence Search</h1>
+        <p class="subtitle">Natural language search across resolved entity data — CRA T3010 charity filings, federal grants &amp; contributions, and Alberta open data — unified into one accountability layer.</p>
       </div>
+      <a class="page-action" href="dossier.html">+ Open Dossier Explorer</a>
+    </div>
 
-      <!-- Meta row -->
-      <div class="card-meta">
-        <span>BN: {{ r.bn_root }}</span>
-        <span>
-          <span v-for="src in r.dataset_sources" :key="src" class="source-pill" :class="src">
-            {{ src.toUpperCase() }}
-          </span>
-        </span>
+    <!-- Demo ribbon -->
+    <div class="demo-ribbon" role="note">
+      <span aria-hidden="true">⚠️</span>
+      <div>
+        <strong>Demonstration build.</strong> Result entities, dollar figures, and external citations shown below are illustrative examples. The underlying platform queries 851K real resolved entities; live integration is available in the Dossier Explorer.
       </div>
+    </div>
 
-      <!-- Policy Pulse -->
-      <div class="policy-pulse" :class="r.policy_pulse.alignment">
-        <span class="pp-badge">
-          {{ r.policy_pulse.alignment === 'aligned' ? '🟢 Policy Aligned' :
-             r.policy_pulse.alignment === 'misaligned' ? '🔴 Funding Risk' : '🟡 Monitor' }}
-        </span>
-        <span class="pp-note">
-          <span class="pp-area">{{ r.policy_pulse.priority_area }}</span> —
-          {{ r.policy_pulse.policy_note }}
-        </span>
+    <!-- KPI strip -->
+    <div class="kpi-strip">
+      <div class="kpi-card">
+        <div class="kpi-icon">⊕</div>
+        <div class="kpi-label">Resolved Entities</div>
+        <div class="kpi-value">851K</div>
+        <div class="kpi-sub">Cross-dataset golden records</div>
       </div>
-
-      <!-- Narrative -->
-      <div class="card-narrative">{{ r.narrative }}</div>
-
-      <!-- Flags -->
-      <div class="card-flags">
-        <span v-for="flag in r.flags" :key="flag"
-              class="flag-pill" :class="flagClass(r, flag)">
-          {{ flagIcon(r) }} {{ flag }}
-        </span>
+      <div class="kpi-card amber">
+        <div class="kpi-icon">$</div>
+        <div class="kpi-label">Public Funding Tracked</div>
+        <div class="kpi-value">$486B</div>
+        <div class="kpi-sub">CRA + Federal + Alberta totals</div>
       </div>
+      <div class="kpi-card purple">
+        <div class="kpi-icon">★</div>
+        <div class="kpi-label">Risk Patterns Surfaced</div>
+        <div class="kpi-value">4.2K+</div>
+        <div class="kpi-sub">Loops, overhead &amp; dependency flags</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-icon">⟲</div>
+        <div class="kpi-label">Datasets Joined</div>
+        <div class="kpi-value">3</div>
+        <div class="kpi-sub">CRA T3010 · Fed grants · Alberta</div>
+      </div>
+    </div>
 
-      <!-- Actions -->
-      <div class="card-actions">
-        <button class="action-btn"
-                @click="toggleWebIntel(r)"
-                :disabled="webIntelLoading[r.id]">
-          <span v-if="webIntelLoading[r.id]"><span class="spin"></span> Searching web…</span>
-          <span v-else-if="webIntel[r.id]">🌐 {{ webIntelOpen[r.id] ? 'Hide' : 'Show' }} Web Intelligence</span>
-          <span v-else>🌐 Check Web Intelligence</span>
+    <!-- Search section -->
+    <div class="search-section">
+      <div class="search-row">
+        <input
+          v-model="query"
+          type="text"
+          class="search-input"
+          placeholder="Ask in plain English — e.g. 'bad actors in housing funding' or 'high-performing Indigenous education charities'"
+          aria-label="Search query"
+          @keydown.enter="search"
+          :disabled="loading"
+          ref="searchInput"
+        />
+        <button class="search-btn" @click="search" :disabled="loading || !query.trim()">
+          <span v-if="loading"><span class="spin"></span> Analyzing</span>
+          <span v-else>🔍 Search</span>
         </button>
-        <a class="action-btn primary" :href="'dossier.html?id=' + r.id" target="_blank">
-          View Full Dossier →
-        </a>
+      </div>
+      <div class="chips">
+        <button v-for="chip in EXAMPLE_CHIPS" :key="chip.label"
+                class="chip" :class="chip.type" @click="useChip(chip.label)">
+          {{ chip.label }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading skeletons -->
+    <div v-if="loading" class="results-section">
+      <div class="results-meta skeleton" style="height:16px; width:240px; background:var(--lv-border); border-radius:4px;"></div>
+      <div class="skel-card skeleton" v-for="i in 4" :key="i">
+        <div class="skel-line title"></div>
+        <div class="skel-line short"></div>
+        <div style="height:8px;"></div>
+        <div class="skel-line full"></div>
+        <div class="skel-line w80"></div>
+        <div class="skel-line w60"></div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="error-box" v-if="error">
+      <span aria-hidden="true">⚠️</span>
+      <span>{{ error }}</span>
+    </div>
+
+    <!-- Empty state (post-search, zero results) -->
+    <div class="empty" v-if="!loading && hasSearched && results.length === 0 && !error">
+      <div class="empty-icon" aria-hidden="true">🔍</div>
+      <h3>No matches in the demo set</h3>
+      <p>This search didn't map to any of the curated demo scenarios. Try one of the example chips above, or open the Dossier Explorer for live entity-level lookup.</p>
+    </div>
+
+    <!-- Results -->
+    <div v-if="!loading && results.length > 0" class="results-section">
+
+      <div class="results-meta">
+        <span>Found <strong>{{ meta.total_found }}</strong> entities</span>
+        <span class="mode-badge" :class="meta.mode === 'bad_actor' ? 'bad' : meta.mode === 'good_actor' ? 'good' : 'mixed'">
+          <span aria-hidden="true">{{ meta.mode === 'bad_actor' ? '🚩' : meta.mode === 'good_actor' ? '✅' : '🔀' }}</span>
+          {{ meta.mode === 'bad_actor' ? 'Concerns' : meta.mode === 'good_actor' ? 'Honor Roll' : 'Cross-Dataset' }}
+        </span>
+        <span>Sorted by {{ meta.mode === 'good_actor' ? 'efficiency score' : 'risk score' }}</span>
+        <button class="sql-toggle" @click="showSql = !showSql" :aria-expanded="showSql">{{ showSql ? '▲ Hide query' : '▼ View underlying query' }}</button>
       </div>
 
-      <!-- Web Intel Panel -->
-      <div class="web-intel-panel" v-if="webIntel[r.id] && webIntelOpen[r.id]">
-        <h4>🌐 Web Intelligence Report</h4>
-        <div class="registry">🏛️ Registry: {{ webIntel[r.id].registry_status }}</div>
+      <div class="sql-box" v-if="showSql">
+        <span class="sql-note">Demonstration query · the underlying platform supports natural-language to SQL via Claude with read-only safety wrappers.</span>{{ meta.sql_generated }}</div>
 
-        <div class="news-item" v-for="item in webIntel[r.id].news_mentions" :key="item.headline"
-             :class="item.sentiment">
-          <span class="news-icon"></span>
-          <div class="news-body">
-            <div class="news-headline">{{ item.headline }}</div>
-            <div class="news-source">{{ item.source }} · {{ item.date }}</div>
+      <!-- Cards -->
+      <article v-for="r in results" :key="r.id" class="result-card" :class="cardClass()">
+
+        <div class="card-top">
+          <div class="card-icon-bubble" :class="cardClass()" aria-hidden="true">{{ cardIcon(r) }}</div>
+          <div class="card-id">
+            <div class="card-name">{{ r.canonical_name }}</div>
+            <div class="card-meta-row">
+              <span>BN {{ r.bn_root }}</span>
+              <span>
+                <span v-for="src in r.dataset_sources" :key="src" class="source-pill" :class="src">
+                  {{ src.toUpperCase() }}
+                </span>
+              </span>
+            </div>
+          </div>
+          <div class="score-badge" :class="scoreBadgeClass(r)">
+            {{ r.score }}/{{ r.score_max }} · {{ r.score_label }}
           </div>
         </div>
 
-        <div class="web-flags">
-          <div v-for="flag in webIntel[r.id].red_flags_found" :key="flag" class="web-flag bad">🚩 {{ flag }}</div>
-          <div v-for="sig in webIntel[r.id].positive_signals" :key="sig" class="web-flag good">✅ {{ sig }}</div>
+        <div class="policy-pulse" :class="r.policy_pulse.alignment" v-if="r.policy_pulse">
+          <span class="pp-badge">
+            {{ r.policy_pulse.alignment === 'aligned' ? '🟢 Policy Aligned' :
+               r.policy_pulse.alignment === 'misaligned' ? '🔴 Funding Risk' : '🟡 Monitor' }}
+          </span>
+          <span>
+            <span class="pp-area">{{ r.policy_pulse.priority_area }}</span>
+            <span class="pp-note"> — {{ r.policy_pulse.policy_note }}</span>
+          </span>
         </div>
 
-        <div class="web-summary" v-if="webIntel[r.id].web_summary">
-          "{{ webIntel[r.id].web_summary }}"
+        <div class="card-narrative">{{ r.narrative }}</div>
+
+        <div class="card-flags">
+          <span v-for="flag in r.flags" :key="flag" class="flag-pill" :class="flagClass(flag)">
+            <span aria-hidden="true">{{ flagIcon() }}</span> {{ flag }}
+          </span>
         </div>
-      </div>
+
+        <div class="card-actions">
+          <button class="action-btn"
+                  @click="toggleWebIntel(r)"
+                  :disabled="webIntelLoading[r.id]"
+                  :aria-expanded="!!webIntelOpen[r.id]">
+            <span v-if="webIntelLoading[r.id]"><span class="spin"></span> Searching</span>
+            <span v-else-if="webIntel[r.id]">🌐 {{ webIntelOpen[r.id] ? 'Hide' : 'Show' }} web intelligence</span>
+            <span v-else>🌐 Check web intelligence</span>
+          </button>
+          <a class="action-btn primary" :href="'dossier.html?id=' + r.id" target="_blank" rel="noopener noreferrer">
+            View full dossier →
+          </a>
+        </div>
+
+        <!-- Web Intel Panel -->
+        <div class="web-intel-panel" v-if="webIntel[r.id] && webIntelOpen[r.id]">
+          <h4>🌐 Web Intelligence Report <span style="font-weight:500; color:var(--lv-muted-2); text-transform:none; letter-spacing:0;">· demonstration content</span></h4>
+          <div class="registry">🏛 Registry: {{ webIntel[r.id].registry_status }}</div>
+
+          <div class="news-item" v-for="item in webIntel[r.id].news_mentions" :key="item.headline" :class="item.sentiment">
+            <span class="news-icon"></span>
+            <div class="news-body">
+              <div class="news-headline">{{ item.headline }}</div>
+              <div class="news-source">{{ item.source }} · {{ item.date }}</div>
+            </div>
+          </div>
+
+          <div class="web-flags">
+            <div v-for="flag in webIntel[r.id].red_flags_found" :key="flag" class="web-flag bad">🚩 {{ flag }}</div>
+            <div v-for="sig in webIntel[r.id].positive_signals" :key="sig" class="web-flag good">✅ {{ sig }}</div>
+          </div>
+
+          <div class="web-summary" v-if="webIntel[r.id].web_summary">
+            "{{ webIntel[r.id].web_summary }}"
+          </div>
+        </div>
+      </article>
 
     </div>
-    <!-- end cards -->
+    <!-- end results -->
+
+    <footer class="app-footer">
+      Long View Systems · Agency 2026 · April 29, 2026
+    </footer>
 
   </div>
-  <!-- end results -->
-
-</div>
 </div>
 
 <script>
-const { createApp, ref, reactive, computed, nextTick } = Vue;
+const { createApp, ref, reactive, nextTick } = Vue;
 
 const EXAMPLE_CHIPS = [
   { label: 'Environmental charities with circular funding', type: 'bad' },
@@ -498,7 +1047,6 @@ createApp({
       results.value = [];
       showSql.value = false;
 
-      // Clear web intel on new search
       Object.keys(webIntel).forEach(k => delete webIntel[k]);
       Object.keys(webIntelLoading).forEach(k => delete webIntelLoading[k]);
       Object.keys(webIntelOpen).forEach(k => delete webIntelOpen[k]);
@@ -512,34 +1060,34 @@ createApp({
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
         const data = await res.json();
         results.value = data.results || [];
-        meta.mode = data.mode;
-        meta.total_found = data.total_found;
-        meta.sql_generated = data.sql_generated;
-        meta.query = data.query;
+        meta.mode = data.mode || '';
+        meta.total_found = data.total_found || results.value.length;
+        meta.sql_generated = data.sql_generated || '';
+        meta.query = data.query || q;
       } catch (e) {
-        error.value = e.message || 'Search failed. Is the mock server running?';
+        error.value = (e && e.message) ? e.message : 'Search failed. Is the demo server running?';
       } finally {
         loading.value = false;
       }
     }
 
     async function toggleWebIntel(r) {
-      // If already loaded, just toggle visibility
       if (webIntel[r.id]) {
         webIntelOpen[r.id] = !webIntelOpen[r.id];
         return;
       }
-      // Fetch
       webIntelLoading[r.id] = true;
       try {
         const res = await fetch(`/api/entity/${r.bn_root}/web-intel`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ canonical_name: r.canonical_name, sector: r.policy_pulse.priority_area })
+          body: JSON.stringify({
+            canonical_name: r.canonical_name,
+            sector: r.policy_pulse ? r.policy_pulse.priority_area : ''
+          })
         });
         if (!res.ok) throw new Error(`Web intel error: ${res.status}`);
-        const data = await res.json();
-        webIntel[r.id] = data;
+        webIntel[r.id] = await res.json();
         webIntelOpen[r.id] = true;
       } catch (e) {
         webIntel[r.id] = {
@@ -547,7 +1095,7 @@ createApp({
           registry_status: 'Could not retrieve — check connection',
           red_flags_found: [],
           positive_signals: [],
-          web_summary: 'Web intelligence lookup failed. ' + e.message
+          web_summary: 'Web intelligence lookup failed. ' + (e.message || '')
         };
         webIntelOpen[r.id] = true;
       } finally {
@@ -555,33 +1103,26 @@ createApp({
       }
     }
 
-    function cardClass(r) {
-      const mode = meta.mode;
-      if (mode === 'bad_actor') return 'bad';
-      if (mode === 'good_actor') return 'good';
+    function cardClass() {
+      if (meta.mode === 'bad_actor') return 'bad';
+      if (meta.mode === 'good_actor') return 'good';
       return 'mixed';
     }
-
     function cardIcon(r) {
       if (meta.mode === 'bad_actor') return '🚩';
       if (meta.mode === 'good_actor') return '✅';
       return r.score > 20 ? '⚠️' : '🔀';
     }
-
     function scoreBadgeClass(r) {
-      const label = r.score_label.toLowerCase().replace(/\s+/g, '-');
-      return label;
+      return (r.score_label || '').toLowerCase().replace(/\s+/g, '-');
     }
-
-    function flagClass(r, flag) {
+    function flagClass(flag) {
       if (meta.mode === 'good_actor') return 'good';
       if (meta.mode === 'bad_actor') return 'bad';
-      // mixed: guess by content
       if (/\$|funding|grants|revenue|federal|ab/i.test(flag)) return 'neutral';
       return 'bad';
     }
-
-    function flagIcon(r) {
+    function flagIcon() {
       return meta.mode === 'good_actor' ? '✅' : '🚩';
     }
 

@@ -993,7 +993,7 @@
     <!-- Compact KPI strip -->
     <div class="kpi-strip">
       <div class="kpi-card">
-        <div class="kpi-label">Tracked · 8q</div>
+        <div class="kpi-label">Tracked · {{ visibleQuarters.length }}q</div>
         <div class="kpi-row">
           <span class="kpi-value">${{ formatBn(kpi.totalAll) }}B</span>
           <span class="kpi-delta" :class="kpi.totalDelta >= 0 ? 'up' : 'down'">
@@ -1044,6 +1044,12 @@
             <button class="pill-btn" :class="{active: source==='cra'}" @click="setSource('cra')">CRA</button>
             <button class="pill-btn" :class="{active: source==='fed'}" @click="setSource('fed')">Federal</button>
             <button class="pill-btn" :class="{active: source==='ab'}" @click="setSource('ab')">Alberta</button>
+            <span style="width:1px; background:var(--lv-border); margin:0 2px;"></span>
+            <button class="pill-btn" :class="{active: windowSize==='month'}" @click="setWindowSize('month')" title="Last quarter (data is quarterly granularity)">Month</button>
+            <button class="pill-btn" :class="{active: windowSize==='quarter'}" @click="setWindowSize('quarter')" title="Most recent quarter only">Quarter</button>
+            <button class="pill-btn" :class="{active: windowSize==='year'}" @click="setWindowSize('year')" title="Last 4 quarters">Year</button>
+            <button class="pill-btn" :class="{active: windowSize==='all'}" @click="setWindowSize('all')" title="All 8 quarters · 2 years">All</button>
+            <span style="width:1px; background:var(--lv-border); margin:0 2px;"></span>
             <button class="pill-btn" @click="running = !running">{{ running ? '⏸ Pause' : '▶ Resume' }}</button>
           </div>
         </div>
@@ -1343,6 +1349,15 @@ createApp({
     const tooltip = ref(null);
     const dataSource = ref('inline-seed');
     const dataSourceGeneratedAt = ref(null);
+    // Visible window: 'month' (last 1 quarter — granularity of seed),
+    // 'quarter' (last 1), 'year' (last 4), 'all' (8). Month and Quarter
+    // share a single column because the seed is quarterly.
+    const windowSize = ref('all');
+    const WINDOW_QUARTERS = { month: 1, quarter: 1, year: 4, all: 8 };
+    const visibleQuarters = computed(() => {
+      const n = WINDOW_QUARTERS[windowSize.value] || 8;
+      return QUARTERS.slice(-n);
+    });
 
     // Mutable per-vertical, per-quarter amounts (in millions)
     const data = reactive(
@@ -1634,11 +1649,16 @@ createApp({
     // Adjust the displayed amounts based on the source filter and per-vertical mix
     const heatRows = computed(() => {
       const w = SOURCE_WEIGHTS[source.value] || SOURCE_WEIGHTS.all;
+      const winN = WINDOW_QUARTERS[windowSize.value] || 8;
+      const startIdx = QUARTERS.length - winN;
       const adjusted = data.map(row => {
         const mix = VERTICAL_SOURCE_MIX[row.vertical] || { cra: 0.34, fed: 0.33, ab: 0.33 };
         const factor = mix.cra * w.cra + mix.fed * w.fed + mix.ab * w.ab;
-        const amounts = row.amounts.map(v => Math.round(v * factor));
-        return { ...row, amountsAdj: amounts };
+        // Slice to the visible window first, then apply source weighting
+        const sliced = row.amounts.slice(startIdx);
+        const tickedSliced = row.ticked.slice(startIdx);
+        const amounts = sliced.map(v => Math.round(v * factor));
+        return { ...row, amountsAdj: amounts, tickedAdj: tickedSliced };
       });
       // Find global max for level mapping (per-source so the contrast adapts)
       let max = 0;
@@ -1647,30 +1667,33 @@ createApp({
         const cells = r.amountsAdj.map((amount, qi) => ({
           amount,
           level: levelFor(amount, max),
-          ticked: r.ticked[qi]
+          ticked: r.tickedAdj[qi]
         }));
         const total = sumArr(r.amountsAdj);
         const latest = r.amountsAdj[r.amountsAdj.length - 1];
-        const prev = r.amountsAdj[r.amountsAdj.length - 2] || 1;
-        const qoq = ((latest - prev) / prev) * 100;
+        const prev = r.amountsAdj.length > 1 ? r.amountsAdj[r.amountsAdj.length - 2] : latest;
+        const qoq = prev ? ((latest - prev) / prev) * 100 : 0;
         return { ...r, cells, total, qoq };
       });
     });
 
-    const totalCells = computed(() => heatRows.value.length * QUARTERS.length);
+    const totalCells = computed(() => heatRows.value.length * visibleQuarters.value.length);
 
     // KPIs derived from heatRows
     const kpi = computed(() => {
       const rows = heatRows.value;
+      const visQ = visibleQuarters.value;
       const totalAll = rows.reduce((s, r) => s + r.total, 0);
       // QoQ for the whole window
-      const lastQ = rows.reduce((s, r) => s + r.cells[r.cells.length - 1].amount, 0);
-      const prevQ = rows.reduce((s, r) => s + r.cells[r.cells.length - 2].amount, 0) || 1;
+      const lastQ = rows.reduce((s, r) => s + (r.cells[r.cells.length - 1]?.amount || 0), 0);
+      const prevQ = (rows[0]?.cells?.length || 0) > 1
+        ? rows.reduce((s, r) => s + (r.cells[r.cells.length - 2]?.amount || 0), 0) || 1
+        : lastQ || 1;
       const totalDelta = ((lastQ - prevQ) / prevQ) * 100;
 
       let hottest = { vertical: '', quarter: '', amount: 0 };
       rows.forEach(r => r.cells.forEach((c, qi) => {
-        if (c.amount > hottest.amount) hottest = { vertical: r.vertical, quarter: QUARTERS[qi], amount: c.amount };
+        if (c.amount > hottest.amount) hottest = { vertical: r.vertical, quarter: visQ[qi], amount: c.amount };
       }));
 
       const sorted = [...rows].sort((a, b) => b.qoq - a.qoq);
@@ -1679,12 +1702,12 @@ createApp({
 
       // Predicted next quarter total = sum of per-vertical projections
       const next = rows.reduce((s, r) => {
-        const a = r.cells[r.cells.length - 1].amount;
-        const b = r.cells[r.cells.length - 2].amount || a;
-        const pct = (a - b) / Math.max(1, b);
+        const a = r.cells[r.cells.length - 1]?.amount || 0;
+        const b = r.cells.length > 1 ? (r.cells[r.cells.length - 2]?.amount || a) : a;
+        const pct = b ? (a - b) / b : 0;
         return s + Math.max(0, Math.round(a * (1 + pct * 0.6)));
       }, 0);
-      const nextDelta = ((next - lastQ) / Math.max(1, lastQ)) * 100;
+      const nextDelta = lastQ ? ((next - lastQ) / lastQ) * 100 : 0;
 
       return {
         totalAll,                                    // M
@@ -1797,10 +1820,15 @@ createApp({
       return Math.round(n).toString();
     }
 
+    function setWindowSize(w) {
+      windowSize.value = w;
+    }
+
     return {
       dark, running, source, filter, pinned, lastUpdate, tickIntervalMs, tooltip,
       dataSource, dataSourceGeneratedAt,
-      heatRows, totalCells, quarters: QUARTERS, kpi, feed, filteredFeed, tip, tipOn,
+      windowSize, visibleQuarters, setWindowSize,
+      heatRows, totalCells, quarters: visibleQuarters, kpi, feed, filteredFeed, tip, tipOn,
       actionPlanLoading,
       toggleTheme, setSource, pinVertical, generateActionPlan,
       showTip, moveTip, hideTip,

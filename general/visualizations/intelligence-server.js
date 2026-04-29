@@ -199,13 +199,21 @@ app.post('/api/ai-search', async (req, res) => {
     // ── Step 1c: Execute against DB ──────────────────────────────────────────
     console.log('[ai-search] Step 1c: Executing query against DB...');
     const client = await pool.connect();
+    // Guard against dropped-connection 'error' events emitted by the
+    // underlying pg client. Without this, a network blip or idle-timeout
+    // mid-query crashes the whole Node process. The event still propagates
+    // as a rejection from client.query() so the existing try/catch handles
+    // the user-facing error path.
+    client.on('error', err => {
+      console.error('[ai-search] pg client error (handled):', err.message);
+    });
     let dbRows = [];
     try {
-      await client.query("SET statement_timeout = '600000'"); // 2 min max
+      await client.query("SET statement_timeout = '60000'"); // 60s cap per request
       const result = await client.query(generatedSQL);
       dbRows = result.rows;
     } finally {
-      client.release();
+      try { client.release(); } catch (_) { /* released on error */ }
     }
 
     console.log(`[ai-search] Step 1c: DB returned ${dbRows.length} rows.`);

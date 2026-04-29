@@ -209,7 +209,7 @@ app.post('/api/ai-search', async (req, res) => {
     });
     let dbRows = [];
     try {
-      await client.query("SET statement_timeout = '60000'"); // 60s cap per request
+      await client.query("SET statement_timeout = '600000'"); // 60s cap per request
       const result = await client.query(generatedSQL);
       dbRows = result.rows;
     } finally {

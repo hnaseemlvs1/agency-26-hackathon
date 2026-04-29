@@ -865,7 +865,7 @@
     <div class="nav-right">
       <div class="demo-pill" title="This is a demonstration with curated examples">
         <span class="dot"></span>
-        <span>Demo Mode</span>
+        <span>Live Mode</span>
       </div>
       <button class="icon-btn" @click="toggleTheme" :aria-label="dark ? 'Switch to light mode' : 'Switch to dark mode'" :aria-pressed="dark">
         {{ dark ? '☀' : '◐' }}
@@ -889,7 +889,7 @@
     <div class="demo-ribbon" role="note">
       <span aria-hidden="true">⚠️</span>
       <div>
-        <strong>Demonstration build.</strong> Result entities, dollar figures, and external citations shown below are illustrative examples. The underlying platform queries 851K real resolved entities; live integration is available in the Dossier Explorer.
+        <strong>Demonstration build.</strong> This is using the live deployed public database and responses can be slow or can fail due to database timeout
       </div>
     </div>
 
@@ -1081,7 +1081,7 @@
       </span>
     </div>
 
-    <div class="card-actions">
+    <!-- <div class="card-actions">
       <button class="action-btn"
               @click="$emit('toggle-web-intel', r)"
               :disabled="webIntelLoading[r.id]"
@@ -1093,7 +1093,7 @@
       <a class="action-btn primary" :href="'dossier.html?id=' + r.id" target="_blank" rel="noopener noreferrer">
         View full dossier →
       </a>
-    </div>
+    </div> -->
 
     <div class="web-intel-panel" v-if="webIntel[r.id] && webIntelOpen[r.id]">
       <h4>🌐 Web Intelligence Report <span style="font-weight:500; color:var(--lv-muted-2); text-transform:none; letter-spacing:0;">· demonstration content</span></h4>

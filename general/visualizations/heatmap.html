@@ -552,20 +552,61 @@
     color: #fff;
     padding: 10px 12px;
     border-radius: 8px;
-    font-size: 12px;
-    line-height: 1.5;
+    font-size: 11px;
+    line-height: 1.45;
     pointer-events: none;
     box-shadow: var(--shadow-lg);
-    min-width: 190px;
-    max-width: 260px;
+    min-width: 240px;
+    max-width: 320px;
     transform: translate(-50%, -100%);
     opacity: 0;
     transition: opacity 0.12s;
   }
   .hm-tooltip.on { opacity: 1; }
-  .hm-tooltip .t-title { font-weight: 700; margin-bottom: 4px; }
-  .hm-tooltip .t-amount { font-size: 16px; font-weight: 700; color: var(--lv-green-2); margin-bottom: 4px; }
-  .hm-tooltip .t-meta { color: rgba(255,255,255,0.7); font-size: 11px; }
+  .hm-tooltip .t-title { font-weight: 700; font-size: 12px; margin-bottom: 4px; }
+  .hm-tooltip .t-amount { font-size: 18px; font-weight: 700; color: var(--lv-green-2); margin-bottom: 6px; line-height: 1.1; }
+  .hm-tooltip .t-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: rgba(255,255,255,0.8);
+    padding: 1px 0;
+  }
+  .hm-tooltip .t-row .label { color: rgba(255,255,255,0.55); }
+  .hm-tooltip .t-row .v { color: #fff; font-weight: 600; }
+  .hm-tooltip .t-row .v.up { color: var(--lv-green-2); }
+  .hm-tooltip .t-row .v.down { color: #fca5a5; }
+  .hm-tooltip .t-divider {
+    margin: 6px 0 4px;
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+  }
+  .hm-tooltip .t-section-title {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 3px;
+  }
+  .hm-tooltip .t-method {
+    color: rgba(255,255,255,0.7);
+    font-size: 10px;
+    line-height: 1.4;
+  }
+  .hm-tooltip .t-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px;
+    margin-bottom: 6px;
+  }
+  .hm-tooltip .t-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--lv-green), var(--heat-7));
+  }
 
   /* Heatmap legend */
   .hm-legend {
@@ -785,6 +826,45 @@
     font-weight: 700;
   }
 
+  /* Action plan loading state */
+  .ap-loading-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--lv-purple);
+    background: var(--lv-purple-bg);
+    border: 1px solid rgba(124,58,237,0.2);
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+  }
+  .spin-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--lv-purple);
+    animation: spin-pulse 1s ease-in-out infinite;
+  }
+  @keyframes spin-pulse {
+    0%, 100% { opacity: 0.4; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
+  .ap-loading-skel {
+    height: 10px;
+    background: linear-gradient(90deg, var(--lv-surface-3) 0%, var(--lv-surface-2) 50%, var(--lv-surface-3) 100%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    animation: skel-shimmer 1.4s ease-in-out infinite;
+  }
+  .ap-loading-skel:nth-child(2) { width: 90%; }
+  .ap-loading-skel:nth-child(3) { width: 75%; }
+  .ap-loading-skel:nth-child(4) { width: 60%; }
+  @keyframes skel-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
   /* Generate Action Plan button (when pinned) */
   .ap-cta {
     display: block;
@@ -901,7 +981,8 @@
       <div class="page-title-line">
         <h1>Realtime Funding Heatmap</h1>
         <span class="lede">Public dollars by vertical, by quarter — CRA · Federal · Alberta unified.</span>
-        <span class="demo-chip" title="Vertical totals, quarterly cells, and agent recommendations are illustrative. Realtime ticks are simulated for demo purposes. Underlying platform aggregates 851K resolved entities and ~12.2M source rows.">⚠ Demo</span>
+        <span v-if="dataSource && dataSource.startsWith('real')" class="demo-chip" style="background:var(--lv-green-bg); color:var(--lv-green-dark); border-color:rgba(45,168,44,0.3);" :title="'Aggregated from fed.grants_contributions + ab.ab_grants + ab.ab_sole_source on ' + (dataSourceGeneratedAt || 'unknown date')">● REAL DATA</span>
+        <span v-else class="demo-chip" title="Inline seed in use because the precompute file is missing. Run general/visualizations/precompute-heatmap.js to regenerate.">⚠ DEMO SEED</span>
       </div>
       <span class="live-indicator" :class="{paused: !running}">
         <span class="dot"></span>
@@ -915,14 +996,16 @@
         <div class="kpi-label">Tracked · 8q</div>
         <div class="kpi-row">
           <span class="kpi-value">${{ formatBn(kpi.totalAll) }}B</span>
-          <span class="kpi-delta up">▲ {{ kpi.totalDelta.toFixed(1) }}%</span>
+          <span class="kpi-delta" :class="kpi.totalDelta >= 0 ? 'up' : 'down'">
+            {{ kpi.totalDelta >= 0 ? '▲' : '▼' }} {{ Math.abs(kpi.totalDelta).toFixed(1) }}% QoQ
+          </span>
         </div>
       </div>
       <div class="kpi-card amber">
         <div class="kpi-label">Hottest Cell</div>
         <div class="kpi-row">
           <span class="kpi-value text">{{ kpi.hottest.vertical }}</span>
-          <span class="kpi-delta up">${{ formatM(kpi.hottest.amount) }}M</span>
+          <span class="kpi-delta up">{{ formatMoney(kpi.hottest.amount) }}</span>
         </div>
         <div class="kpi-sub">{{ kpi.hottest.quarter }}</div>
       </div>
@@ -930,7 +1013,9 @@
         <div class="kpi-label">Fastest-Growing</div>
         <div class="kpi-row">
           <span class="kpi-value text">{{ kpi.growing.vertical }}</span>
-          <span class="kpi-delta up">▲ {{ kpi.growing.deltaQoQ.toFixed(1) }}% QoQ</span>
+          <span class="kpi-delta" :class="kpi.growing.deltaQoQ >= 0 ? 'up' : 'down'">
+            {{ kpi.growing.deltaQoQ >= 0 ? '▲' : '▼' }} {{ Math.abs(kpi.growing.deltaQoQ).toFixed(1) }}% QoQ
+          </span>
         </div>
       </div>
       <div class="kpi-card blue">
@@ -1066,6 +1151,20 @@
               <div style="font-size:13px; font-weight:700; color:var(--lv-text); margin-bottom:6px;">
                 🎯 {{ item.plan.vertical }}
               </div>
+
+              <!-- Loading state while the model is reasoning -->
+              <template v-if="item.plan.loading">
+                <div class="ap-loading-status">
+                  <span class="spin-dot"></span>
+                  <span>Model reasoning over the last 8 quarters…</span>
+                </div>
+                <div class="ap-loading-skel" v-for="n in 3" :key="'skel-'+n"></div>
+                <div class="ap-meta">
+                  <span>Drafting · usually 15–30s · adaptive thinking, effort=high</span>
+                </div>
+              </template>
+
+              <template v-else>
               <div class="ap-summary">{{ item.plan.summary }}</div>
 
               <div class="ap-section">
@@ -1099,9 +1198,9 @@
                 <div class="ap-section-title">Forecast · next quarter</div>
                 <div class="ap-forecast">
                   <div class="ap-forecast-band">
-                    <span>low ${{ formatM(item.plan.forecast_band.low) }}M</span>
-                    <strong>${{ formatM(item.plan.forecast_band.mid) }}M</strong>
-                    <span>high ${{ formatM(item.plan.forecast_band.high) }}M</span>
+                    <span>low {{ formatMoney(item.plan.forecast_band.low) }}</span>
+                    <strong>{{ formatMoney(item.plan.forecast_band.mid) }}</strong>
+                    <span>high {{ formatMoney(item.plan.forecast_band.high) }}</span>
                   </div>
                 </div>
               </div>
@@ -1110,6 +1209,7 @@
                 <span>{{ item.plan.model_label }} · {{ item.plan.latency_ms }}ms · {{ item.plan.cache_hits }}</span>
                 <span v-if="item.plan.fallback" class="ap-fallback-tag">FALLBACK</span>
               </div>
+              </template> <!-- end !loading -->
             </template>
           </div>
         </div>
@@ -1118,9 +1218,16 @@
 
     <!-- Demonstration disclosure (proper box, near footer) -->
     <div class="demo-ribbon" role="note" style="margin-top:24px;">
-      <span aria-hidden="true">⚠️</span>
+      <span aria-hidden="true">ℹ️</span>
       <div>
-        <strong>Demonstration build.</strong> Vertical totals, quarterly cells, and agent recommendations shown above are illustrative. The underlying platform aggregates over 851K resolved entities and ~12.2M source rows from CRA, federal, and Alberta open data. Realtime ticks here are simulated for demo purposes; action plans are generated by the model against the simulated trajectory + recent agent signals.
+        <strong>Methodology.</strong>
+        <template v-if="dataSource && dataSource.startsWith('real')">
+          Quarterly amounts are aggregated from <strong>fed.grants_contributions</strong> (federal grants &amp; contributions, classified by full-text search on program name), <strong>ab.ab_grants</strong>, and <strong>ab.ab_sole_source</strong>, bucketed by calendar quarter (Apr 2024 → Mar 2026). Verticals are derived from program-text classification and may overlap. Realtime ticks on top of the precomputed seed simulate live updates for demo purposes; action plans are generated by the model against the current trajectory + recent agent signals.
+          <span v-if="dataSourceGeneratedAt" style="color:var(--lv-muted-2);"> · seed generated {{ dataSourceGeneratedAt }}</span>
+        </template>
+        <template v-else>
+          The current view is using an <strong>inline demo seed</strong> because the real-data precompute file is missing. Run <code>node general/visualizations/precompute-heatmap.js</code> to aggregate fed.grants_contributions + ab.ab_grants + ab.ab_sole_source by vertical and quarter, and reload the page.
+        </template>
       </div>
     </div>
 
@@ -1132,8 +1239,26 @@
   <!-- Floating tooltip -->
   <div ref="tooltip" class="hm-tooltip" :class="{on: tipOn}">
     <div class="t-title">{{ tip.title }}</div>
-    <div class="t-amount">${{ formatM(tip.amount) }}M</div>
-    <div class="t-meta">{{ tip.meta }}</div>
+    <div class="t-amount">{{ formatMoney(tip.amount) }}</div>
+
+    <div class="t-row"><span class="label">QoQ change</span>
+      <span class="v" :class="tip.qoq > 0 ? 'up' : tip.qoq < 0 ? 'down' : ''">
+        {{ tip.qoq > 0 ? '▲' : tip.qoq < 0 ? '▼' : '·' }} {{ Math.abs(tip.qoq).toFixed(1) }}% ({{ tip.qoq >= 0 ? '+' : '-' }}{{ formatMoney(Math.abs(tip.qoqDelta)) }})
+      </span>
+    </div>
+    <div class="t-row"><span class="label">Vertical rank</span><span class="v">#{{ tip.verticalRank }} of 12</span></div>
+    <div class="t-row"><span class="label">Share of {{ tip.quarter }}</span><span class="v">{{ tip.quarterShare.toFixed(1) }}%</span></div>
+
+    <div class="t-divider"></div>
+    <div class="t-section-title">Source mix · this vertical</div>
+    <div class="t-row"><span class="label">CRA T3010</span><span class="v">{{ tip.mix.cra }}%</span></div>
+    <div class="t-row"><span class="label">Federal G&amp;C</span><span class="v">{{ tip.mix.fed }}%</span></div>
+    <div class="t-row"><span class="label">Alberta open data</span><span class="v">{{ tip.mix.ab }}%</span></div>
+
+    <div class="t-divider"></div>
+    <div class="t-section-title">Why level {{ tip.level }} of 8</div>
+    <div class="t-bar"><div class="t-bar-fill" :style="{ width: ((tip.level / 8) * 100) + '%' }"></div></div>
+    <div class="t-method">{{ tip.method }}</div>
   </div>
 </div>
 
@@ -1216,6 +1341,8 @@ createApp({
     const lastUpdate = ref('just now');
     const tickIntervalMs = 4000;
     const tooltip = ref(null);
+    const dataSource = ref('inline-seed');
+    const dataSourceGeneratedAt = ref(null);
 
     // Mutable per-vertical, per-quarter amounts (in millions)
     const data = reactive(
@@ -1291,6 +1418,19 @@ createApp({
         recent_signals: recentSignals
       };
 
+      // Push a placeholder card immediately so the user sees feedback during the
+      // ~20s LLM call. We mark it with `loading: true` and replace it on success.
+      const placeholderId = ++feedSeq;
+      feed.value.unshift({
+        id: placeholderId,
+        kind: 'action_plan',
+        label: 'ACTION PLAN',
+        plan: { vertical: pinned.value, loading: true, started_at: Date.now() },
+        ts: Date.now(),
+        timeLabel: 'just now'
+      });
+      filter.value = 'action_plan';
+
       const startedAt = performance.now();
       let plan = null;
       try {
@@ -1302,7 +1442,6 @@ createApp({
         if (!res.ok) throw new Error('action-plan ' + res.status);
         plan = await res.json();
       } catch (e) {
-        // Client-side fallback (server unreachable)
         plan = clientSideFallbackPlan(payload);
       }
 
@@ -1311,10 +1450,17 @@ createApp({
       plan.latency_ms = latency;
       plan.model_label = plan.model_label || (plan.fallback ? 'fallback (template)' : 'model');
       plan.cache_hits = plan.cache_hits || (plan.fallback ? '—' : 'first call');
-      pushActionPlan(plan);
+      plan.loading = false;
+
+      // Replace the placeholder in-place
+      const idx = feed.value.findIndex(item => item.id === placeholderId);
+      if (idx >= 0) {
+        feed.value[idx] = { ...feed.value[idx], plan, ts: Date.now(), timeLabel: 'just now' };
+      } else {
+        pushActionPlan(plan);
+      }
 
       actionPlanLoading.value = false;
-      filter.value = 'action_plan';
     }
 
     function clientSideFallbackPlan({ vertical, quarters, amounts, source_filter }) {
@@ -1424,8 +1570,13 @@ createApp({
             const row = data.find(d => d.vertical === lr.vertical);
             if (row && Array.isArray(lr.amounts) && lr.amounts.length === row.amounts.length) {
               row.amounts = lr.amounts.slice();
+              if (lr.breakdown) row.breakdown = lr.breakdown;
             }
           });
+        }
+        if (live && live.data_source) {
+          dataSource.value = live.data_source;
+          dataSourceGeneratedAt.value = live.seed_generated_at || null;
         }
       } catch (e) {
         /* offline → client-side simulation continues */
@@ -1549,13 +1700,63 @@ createApp({
     const filteredFeed = computed(() => filter.value === 'all' ? feed.value : feed.value.filter(f => f.kind === filter.value));
 
     // Tooltip state
-    const tip = reactive({ title: '', amount: 0, meta: '' });
+    const tip = reactive({
+      title: '', amount: 0, quarter: '', level: 0,
+      qoq: 0, qoqDelta: 0, verticalRank: 0, quarterShare: 0,
+      mix: { cra: 0, fed: 0, ab: 0 },
+      method: ''
+    });
     const tipOn = ref(false);
+
+    // Bucket descriptions matching levelFor() in heatRows
+    const LEVEL_LABELS = [
+      'lower 10% of grid',                 // 0
+      '10–22% of grid peak',               // 1
+      '22–34% of grid peak',               // 2
+      '34–46% of grid peak',               // 3
+      '46–58% of grid peak',               // 4
+      '58–70% of grid peak',               // 5
+      '70–82% of grid peak · concentration watch',   // 6
+      '82–92% of grid peak · concentration risk',    // 7
+      '≥ 92% of grid peak · acute concentration'     // 8
+    ];
+
     function showTip(evt, row, quarter, cell) {
       tip.title = `${row.vertical} · ${quarter}`;
       tip.amount = cell.amount;
-      const sourceLabel = source.value === 'all' ? 'all sources' : source.value.toUpperCase();
-      tip.meta = `Source filter: ${sourceLabel} · level ${cell.level}/8`;
+      tip.quarter = quarter;
+      tip.level = cell.level;
+
+      // QoQ delta vs previous quarter for this row
+      const qi = row.cells.indexOf(cell);
+      const prev = qi > 0 ? row.cells[qi - 1].amount : cell.amount;
+      tip.qoqDelta = cell.amount - prev;
+      tip.qoq = prev ? (tip.qoqDelta / prev) * 100 : 0;
+
+      // Vertical's rank by total over the 8-quarter window (1 = biggest)
+      const rows = heatRows.value;
+      const sorted = [...rows].sort((a, b) => b.total - a.total);
+      tip.verticalRank = sorted.findIndex(r => r.vertical === row.vertical) + 1;
+
+      // Share of this quarter's all-vertical total
+      const quarterTotal = rows.reduce((s, r) => s + (r.cells[qi]?.amount || 0), 0) || 1;
+      tip.quarterShare = (cell.amount / quarterTotal) * 100;
+
+      // Source mix for this vertical, weighted by current source filter
+      const baseMix = VERTICAL_SOURCE_MIX[row.vertical] || { cra: 0.34, fed: 0.33, ab: 0.33 };
+      const w = SOURCE_WEIGHTS[source.value] || SOURCE_WEIGHTS.all;
+      const weighted = { cra: baseMix.cra * w.cra, fed: baseMix.fed * w.fed, ab: baseMix.ab * w.ab };
+      const sumW = (weighted.cra + weighted.fed + weighted.ab) || 1;
+      tip.mix = {
+        cra: Math.round((weighted.cra / sumW) * 100),
+        fed: Math.round((weighted.fed / sumW) * 100),
+        ab:  Math.round((weighted.ab  / sumW) * 100)
+      };
+
+      // Methodology line
+      const sourceLabel = source.value === 'all' ? 'all sources combined' : `${source.value.toUpperCase()} only`;
+      tip.method = `Cells ranked by intensity vs the highest single cell in the visible grid (${sourceLabel}). ${LEVEL_LABELS[cell.level] || ''}.`;
+
       tipOn.value = true;
       moveTip(evt);
     }
@@ -1571,9 +1772,21 @@ createApp({
       document.documentElement.classList.toggle('dark', dark.value);
     }
 
+    // formatM: input is millions of CAD. Output "$XX" up to 999, "$X.X k" for
+    // thousands of millions when displayed alongside an "M" suffix in the
+    // template, and "$X.XX bn" when used in a self-contained context.
     function formatM(n) {
-      if (n >= 1000) return (n / 1000).toFixed(2) + 'k';
-      return Math.round(n).toString();
+      const abs = Math.abs(n);
+      if (abs >= 1000) return (n / 1000).toFixed(1) + 'k';
+      if (abs >= 1) return Math.round(n).toString();
+      return n.toFixed(1);
+    }
+    // formatMoney: smart unit-aware formatter that picks B / M based on scale.
+    // Input is millions; returns a human-friendly string with units included.
+    function formatMoney(n) {
+      const abs = Math.abs(n);
+      if (abs >= 1000) return '$' + (n / 1000).toFixed(2) + 'B';
+      return '$' + Math.round(n) + 'M';
     }
     function formatBn(n) {
       // n is in millions
@@ -1586,11 +1799,12 @@ createApp({
 
     return {
       dark, running, source, filter, pinned, lastUpdate, tickIntervalMs, tooltip,
+      dataSource, dataSourceGeneratedAt,
       heatRows, totalCells, quarters: QUARTERS, kpi, feed, filteredFeed, tip, tipOn,
       actionPlanLoading,
       toggleTheme, setSource, pinVertical, generateActionPlan,
       showTip, moveTip, hideTip,
-      formatM, formatBn, formatCell
+      formatM, formatBn, formatCell, formatMoney
     };
   }
 }).mount('#app');

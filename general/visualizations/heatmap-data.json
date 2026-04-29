@@ -1,0 +1,622 @@
+{
+  "generated_at": "2026-04-29T16:16:47.971Z",
+  "quarters": [
+    "Q2-24",
+    "Q3-24",
+    "Q4-24",
+    "Q1-25",
+    "Q2-25",
+    "Q3-25",
+    "Q4-25",
+    "Q1-26"
+  ],
+  "rows": [
+    {
+      "vertical": "Health & Mental Health",
+      "amounts": [
+        7493,
+        6593,
+        6035,
+        6035,
+        8311,
+        4669,
+        5397,
+        3375
+      ],
+      "breakdown": {
+        "fed": [
+          2282,
+          1319,
+          115,
+          1160,
+          3621,
+          57,
+          121,
+          0
+        ],
+        "ab_grants": [
+          5018,
+          5255,
+          5897,
+          4865,
+          4593,
+          4583,
+          5276,
+          3375
+        ],
+        "ab_sole_source": [
+          193,
+          20,
+          23,
+          10,
+          97,
+          29,
+          0,
+          0
+        ]
+      },
+      "sources_used": [
+        "fed",
+        "ab_grants",
+        "ab_sole_source"
+      ]
+    },
+    {
+      "vertical": "Indigenous Programs",
+      "amounts": [
+        1674,
+        713,
+        2847,
+        4537,
+        731,
+        1658,
+        765,
+        65
+      ],
+      "breakdown": {
+        "fed": [
+          1611,
+          656,
+          2800,
+          4465,
+          656,
+          1602,
+          709,
+          1
+        ],
+        "ab_grants": [
+          61,
+          56,
+          47,
+          71,
+          75,
+          53,
+          56,
+          64
+        ],
+        "ab_sole_source": [
+          1,
+          2,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0
+        ]
+      },
+      "sources_used": [
+        "fed",
+        "ab_grants",
+        "ab_sole_source"
+      ]
+    },
+    {
+      "vertical": "Housing & Shelter",
+      "amounts": [
+        95,
+        30,
+        286,
+        1420,
+        411,
+        92,
+        240,
+        39
+      ],
+      "breakdown": {
+        "fed": [
+          76,
+          16,
+          267,
+          1311,
+          364,
+          67,
+          195,
+          0
+        ],
+        "ab_grants": [
+          18,
+          13,
+          19,
+          108,
+          46,
+          25,
+          45,
+          39
+        ],
+        "ab_sole_source": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "sources_used": [
+        "fed",
+        "ab_grants",
+        "ab_sole_source"
+      ]
+    },
+    {
+      "vertical": "Education & Research",
+      "amounts": [
+        8749,
+        3078,
+        3078,
+        4626,
+        9006,
+        3555,
+        3189,
+        1706
+      ],
+      "breakdown": {
+        "fed": [
+          6596,
+          827,
+          897,
+          1756,
+          5944,
+          503,
+          681,
+          8
+        ],
+        "ab_grants": [
+          2153,
+          2247,
+          2181,
+          2870,
+          3061,
+          3030,
+          2509,
+          1698
+        ],
+        "ab_sole_source": [
+          1,
+          4,
+          0,
+          0,
+          0,
+          22,
+          0,
+          0
+        ]
+      },
+      "sources_used": [
+        "fed",
+        "ab_grants",
+        "ab_sole_source"
+      ]
+    },
+    {
+      "vertical": "Environment & Climate",
+      "amounts": [
+        791,
+        797,
+        449,
+        600,
+        569,
+        196,
+        251,
+        22
+      ],
+      "breakdown": {
+        "fed": [
+          674,
+          737,
+          368,
+          526,
+          501,
+          105,
+          193,
+          0
+        ],
+        "ab_grants": [
+          97,
+          55,
+          68,
+          72,
+          67,
+          81,
+          58,
+          22
+        ],
+        "ab_sole_source": [
+          20,
+          4,
+          13,
+          1,
+          1,
+          10,
+          0,
+          0
+        ]
+      },
+      "sources_used": [
+        "fed",
+        "ab_grants",
+        "ab_sole_source"
+      ]
+    },
+    {
+      "vertical": "Defense & Security",
+      "amounts": [
+        113,
+        24,
+        354,
+        92,
+        194,
+        36,
+        43,
+        14
+      ],
+      "breakdown": {
+        "fed": [
+          108,
+          21,
+          344,
+          84,
+          183,
+          29,
+          42,
+          0
+        ],
+        "ab_grants": [
+          5,
+          1,
+          6,
+          8,
+          10,
+          7,
+          1,
+          14
+        ],
+        "ab_sole_source": [
+          0,
+          1,
+          5,
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "sources_used": [
+        "fed",
+        "ab_grants",
+        "ab_sole_source"
+      ]
+    },
+    {
+      "vertical": "Infrastructure",
+      "amounts": [
+        3947,
+        1524,
+        1366,
+        2195,
+        4369,
+        431,
+        728,
+        459
+      ],
+      "breakdown": {
+        "fed": [
+          3606,
+          1261,
+          971,
+          1678,
+          3572,
+          143,
+          331,
+          0
+        ],
+        "ab_grants": [
+          340,
+          258,
+          393,
+          515,
+          775,
+          287,
+          397,
+          459
+        ],
+        "ab_sole_source": [
+          1,
+          5,
+          2,
+          2,
+          21,
+          2,
+          0,
+          0
+        ]
+      },
+      "sources_used": [
+        "fed",
+        "ab_grants",
+        "ab_sole_source"
+      ]
+    },
+    {
+      "vertical": "Arts & Culture",
+      "amounts": [
+        872,
+        223,
+        221,
+        118,
+        591,
+        135,
+        365,
+        101
+      ],
+      "breakdown": {
+        "fed": [
+          446,
+          39,
+          37,
+          19,
+          184,
+          18,
+          201,
+          1
+        ],
+        "ab_grants": [
+          411,
+          184,
+          184,
+          98,
+          400,
+          115,
+          164,
+          100
+        ],
+        "ab_sole_source": [
+          15,
+          0,
+          0,
+          1,
+          6,
+          2,
+          0,
+          0
+        ]
+      },
+      "sources_used": [
+        "fed",
+        "ab_grants",
+        "ab_sole_source"
+      ]
+    },
+    {
+      "vertical": "Economic Development",
+      "amounts": [
+        2361,
+        706,
+        738,
+        1015,
+        3447,
+        592,
+        544,
+        421
+      ],
+      "breakdown": {
+        "fed": [
+          2075,
+          500,
+          434,
+          574,
+          2640,
+          272,
+          241,
+          0
+        ],
+        "ab_grants": [
+          205,
+          200,
+          296,
+          436,
+          726,
+          319,
+          303,
+          421
+        ],
+        "ab_sole_source": [
+          82,
+          6,
+          8,
+          5,
+          82,
+          1,
+          0,
+          0
+        ]
+      },
+      "sources_used": [
+        "fed",
+        "ab_grants",
+        "ab_sole_source"
+      ]
+    },
+    {
+      "vertical": "Justice & Legal Aid",
+      "amounts": [
+        358,
+        51,
+        76,
+        96,
+        140,
+        34,
+        56,
+        21
+      ],
+      "breakdown": {
+        "fed": [
+          352,
+          17,
+          13,
+          58,
+          113,
+          3,
+          5,
+          2
+        ],
+        "ab_grants": [
+          4,
+          33,
+          56,
+          30,
+          24,
+          27,
+          51,
+          20
+        ],
+        "ab_sole_source": [
+          3,
+          1,
+          8,
+          8,
+          4,
+          4,
+          0,
+          0
+        ]
+      },
+      "sources_used": [
+        "fed",
+        "ab_grants",
+        "ab_sole_source"
+      ]
+    },
+    {
+      "vertical": "Agriculture & Food",
+      "amounts": [
+        423,
+        160,
+        179,
+        149,
+        776,
+        101,
+        205,
+        46
+      ],
+      "breakdown": {
+        "fed": [
+          62,
+          17,
+          32,
+          109,
+          429,
+          15,
+          50,
+          0
+        ],
+        "ab_grants": [
+          359,
+          143,
+          147,
+          39,
+          346,
+          84,
+          155,
+          46
+        ],
+        "ab_sole_source": [
+          2,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0
+        ]
+      },
+      "sources_used": [
+        "fed",
+        "ab_grants",
+        "ab_sole_source"
+      ]
+    },
+    {
+      "vertical": "International Aid",
+      "amounts": [
+        4487,
+        671,
+        556,
+        213,
+        4325,
+        253,
+        134,
+        8
+      ],
+      "breakdown": {
+        "fed": [
+          4482,
+          671,
+          556,
+          213,
+          4322,
+          253,
+          131,
+          8
+        ],
+        "ab_grants": [
+          5,
+          0,
+          0,
+          0,
+          3,
+          0,
+          4,
+          0
+        ],
+        "ab_sole_source": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "sources_used": [
+        "fed",
+        "ab_grants",
+        "ab_sole_source"
+      ]
+    }
+  ],
+  "sources_summary": {
+    "fed": "fed.grants_contributions, agreement_start_date 2024-04-01 → 2026-04-01, excludes amendments",
+    "ab_grants": "ab.ab_grants, payment_date in same range",
+    "ab_sole_source": "ab.ab_sole_source, start_date in same range"
+  },
+  "classification_method": "tsquery on fed.prog_name_en (GIN index); ILIKE ANY on ab program||ministry",
+  "errors": []
+}

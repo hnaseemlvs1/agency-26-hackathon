@@ -408,7 +408,11 @@ After searching, return ONLY a JSON object (no markdown fences):
 // opens with a coherent snapshot. Vertical names + quarter count must match
 // VERTICALS / QUARTERS in heatmap.html.
 
-const HEATMAP_SEED = {
+// Real-data seed precomputed by visualizations/precompute-heatmap.js. Falls
+// back to the inline seed if the file is missing.
+
+const HEATMAP_FALLBACK_SEED = {
+  generated_at: null,
   quarters: ['Q2-24','Q3-24','Q4-24','Q1-25','Q2-25','Q3-25','Q4-25','Q1-26'],
   rows: [
     { vertical: 'Health & Mental Health', amounts: [180, 195, 210, 220, 245, 260, 275, 290] },
@@ -423,15 +427,43 @@ const HEATMAP_SEED = {
     { vertical: 'Justice & Legal Aid',     amounts: [38, 40, 42, 44, 46, 48, 50, 52] },
     { vertical: 'Agriculture & Food',      amounts: [56, 62, 65, 70, 72, 74, 78, 82] },
     { vertical: 'International Aid',       amounts: [48, 50, 52, 54, 50, 48, 46, 44] }
-  ]
+  ],
+  data_source: 'inline-seed (precompute file missing)'
 };
+
+function loadHeatmapSeed() {
+  const file = path.join(__dirname, 'heatmap-data.json');
+  if (!fs.existsSync(file)) return HEATMAP_FALLBACK_SEED;
+  try {
+    const j = JSON.parse(fs.readFileSync(file, 'utf8'));
+    return {
+      generated_at: j.generated_at,
+      quarters: j.quarters,
+      rows: j.rows.map(r => ({ vertical: r.vertical, amounts: r.amounts, breakdown: r.breakdown })),
+      data_source: 'real (fed.grants_contributions + ab.ab_grants + ab.ab_sole_source)'
+    };
+  } catch (e) {
+    console.error(`[heatmap] failed to load heatmap-data.json: ${e.message} — using fallback seed`);
+    return HEATMAP_FALLBACK_SEED;
+  }
+}
+
+const HEATMAP_SEED = loadHeatmapSeed();
+console.log(`[heatmap] data source: ${HEATMAP_SEED.data_source}${HEATMAP_SEED.generated_at ? ` · generated ${HEATMAP_SEED.generated_at}` : ''}`);
 
 app.get('/api/funding-heatmap', (req, res) => {
   const jitter = HEATMAP_SEED.rows.map(r => ({
     vertical: r.vertical,
-    amounts: r.amounts.map(a => Math.max(8, Math.round(a + (Math.random() - 0.5) * a * 0.05)))
+    amounts: r.amounts.map(a => Math.max(1, Math.round(a + (Math.random() - 0.5) * a * 0.05))),
+    breakdown: r.breakdown
   }));
-  res.json({ quarters: HEATMAP_SEED.quarters, rows: jitter, generated_at: new Date().toISOString() });
+  res.json({
+    quarters: HEATMAP_SEED.quarters,
+    rows: jitter,
+    data_source: HEATMAP_SEED.data_source,
+    seed_generated_at: HEATMAP_SEED.generated_at,
+    generated_at: new Date().toISOString()
+  });
 });
 
 // ── Action Plan ───────────────────────────────────────────────────────────────

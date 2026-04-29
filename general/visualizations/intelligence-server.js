@@ -402,11 +402,227 @@ After searching, return ONLY a JSON object (no markdown fences):
   }
 });
 
+// ── Heatmap (seed) ────────────────────────────────────────────────────────────
+// Static seed for the realtime heatmap demo. The page generates ticks
+// client-side; this endpoint just sets the starting amounts so the page
+// opens with a coherent snapshot. Vertical names + quarter count must match
+// VERTICALS / QUARTERS in heatmap.html.
+
+const HEATMAP_SEED = {
+  quarters: ['Q2-24','Q3-24','Q4-24','Q1-25','Q2-25','Q3-25','Q4-25','Q1-26'],
+  rows: [
+    { vertical: 'Health & Mental Health', amounts: [180, 195, 210, 220, 245, 260, 275, 290] },
+    { vertical: 'Indigenous Programs',     amounts: [85, 92, 110, 130, 158, 184, 210, 240] },
+    { vertical: 'Housing & Shelter',       amounts: [120, 132, 145, 160, 175, 168, 180, 198] },
+    { vertical: 'Education & Research',    amounts: [140, 148, 152, 162, 170, 175, 182, 188] },
+    { vertical: 'Environment & Climate',   amounts: [62, 70, 78, 84, 76, 82, 90, 96] },
+    { vertical: 'Defense & Security',      amounts: [210, 220, 230, 245, 260, 282, 295, 320] },
+    { vertical: 'Infrastructure',          amounts: [165, 170, 178, 184, 190, 198, 205, 215] },
+    { vertical: 'Arts & Culture',          amounts: [42, 44, 46, 48, 50, 52, 54, 56] },
+    { vertical: 'Economic Development',    amounts: [98, 104, 112, 118, 122, 130, 138, 145] },
+    { vertical: 'Justice & Legal Aid',     amounts: [38, 40, 42, 44, 46, 48, 50, 52] },
+    { vertical: 'Agriculture & Food',      amounts: [56, 62, 65, 70, 72, 74, 78, 82] },
+    { vertical: 'International Aid',       amounts: [48, 50, 52, 54, 50, 48, 46, 44] }
+  ]
+};
+
+app.get('/api/funding-heatmap', (req, res) => {
+  const jitter = HEATMAP_SEED.rows.map(r => ({
+    vertical: r.vertical,
+    amounts: r.amounts.map(a => Math.max(8, Math.round(a + (Math.random() - 0.5) * a * 0.05)))
+  }));
+  res.json({ quarters: HEATMAP_SEED.quarters, rows: jitter, generated_at: new Date().toISOString() });
+});
+
+// ── Action Plan ───────────────────────────────────────────────────────────────
+// POST /api/action-plan
+// Body: { vertical, quarters, amounts, source_filter, recent_signals }
+// Calls Claude Opus 4.7 with adaptive thinking + structured JSON output and
+// prompt caching on the system prompt. Falls back to a deterministic templated
+// plan when ANTHROPIC_API_KEY is missing or the call fails.
+
+const ACTION_PLAN_SYSTEM = `You are the Funding Reviewer agent for Long View Systems' Public Funding Intelligence platform.
+
+Your role is to analyse where public dollars (CRA charity filings, federal grants & contributions, and Alberta open data) are flowing into a single spending vertical, and produce a concrete, actionable plan a senior public-sector accountability analyst can act on this week.
+
+For every request you receive:
+- A vertical name (e.g. "Defense & Security", "Indigenous Programs")
+- The vertical's last 8 quarterly totals in millions of CAD
+- The current source filter (all sources / CRA / FED / Alberta) — this affects which accountability levers apply
+- A short list of recent agent observations / alerts from the live heatmap
+
+Reasoning rules:
+- Reason from the actual quarterly numbers — call out specific deltas, peaks, troughs.
+- If the source filter is not "all", scope the plan to that source's accountability levers:
+    CRA = T3010 overhead and circular gifting, FED = federal grant amendments and concentration, AB = Alberta sole-source and Blue Book contracts.
+- Be direct. No hedging. No "consider potentially exploring".
+- All currency is CAD millions unless otherwise stated.
+- Forecast band must be within ~30% of the latest quarter; the trajectory must justify the mid value.
+
+Output rules:
+- summary: one or two sentences naming the most important finding given the trajectory and recent signals.
+- top_actions: 3-5 concrete next-step actions, ranked by leverage. Each: imperative title, one-sentence "why" citing specific numbers, and a realistic owner role.
+- investigate_next: 2-3 follow-up questions an analyst should run through the search/dossier explorer.
+- dossier_candidates: 0-3 illustrative entities with plausible names + 9-digit fake BNs. Mark these as illustrative.
+- forecast_band: low / mid / high projection for the next quarter, in millions.
+
+Return JSON only. No preamble, no markdown.`;
+
+const ACTION_PLAN_SCHEMA = {
+  type: 'object',
+  properties: {
+    summary: { type: 'string' },
+    top_actions: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          why: { type: 'string' },
+          owner: { type: 'string' }
+        },
+        required: ['title', 'why', 'owner'],
+        additionalProperties: false
+      }
+    },
+    investigate_next: { type: 'array', items: { type: 'string' } },
+    dossier_candidates: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          bn: { type: 'string' },
+          why: { type: 'string' }
+        },
+        required: ['name', 'bn', 'why'],
+        additionalProperties: false
+      }
+    },
+    forecast_band: {
+      type: 'object',
+      properties: {
+        low: { type: 'number' },
+        mid: { type: 'number' },
+        high: { type: 'number' }
+      },
+      required: ['low', 'mid', 'high'],
+      additionalProperties: false
+    }
+  },
+  required: ['summary', 'top_actions', 'investigate_next', 'dossier_candidates', 'forecast_band'],
+  additionalProperties: false
+};
+
+function templateActionPlan({ vertical, amounts, source_filter }) {
+  const last = amounts[amounts.length - 1];
+  const prev = amounts[amounts.length - 2] || last;
+  const pct = ((last - prev) / Math.max(1, prev)) * 100;
+  const trend = pct > 5 ? 'sharp upward' : pct < -5 ? 'declining' : 'stable';
+  const pred = Math.round(last * (1 + (pct / 100) * 0.6));
+  const sourceLabel = source_filter === 'all' ? 'all sources' : (source_filter || 'all').toUpperCase();
+  return {
+    vertical,
+    summary: `${vertical} closed the most recent quarter at $${last}M (${pct >= 0 ? '+' : ''}${pct.toFixed(1)}% QoQ). The ${sourceLabel} view shows a ${trend} trajectory across the last 8 quarters.`,
+    top_actions: [
+      { title: `Audit top-10 recipients in ${vertical}`, why: `${last}M deployed last quarter — pull the top recipients via the Dossier Explorer and check overhead ratios above 0.55.`, owner: 'Program Evaluator' },
+      { title: 'Cross-reference the last 3 agent alerts in this vertical', why: 'Multiple flags warrant a focused review before Q2-26 close.', owner: 'Risk Analyst' },
+      { title: 'Compare concentration to prior 4-quarter baseline', why: `Trajectory at ${pct.toFixed(1)}% QoQ — confirm whether the shift is driven by 1-2 recipients or broad-based.`, owner: 'Procurement Audit Lead' }
+    ],
+    investigate_next: [
+      `Top 10 ${vertical} recipients ranked by overhead ratio`,
+      'Dual-funded entities (CRA + AB sole-source) within this vertical',
+      'YoY amendment creep on federal grants in this vertical'
+    ],
+    dossier_candidates: [],
+    forecast_band: { low: Math.max(8, Math.round(pred * 0.9)), mid: pred, high: Math.round(pred * 1.1) },
+    fallback: true,
+    model_label: 'fallback (template)',
+    cache_hits: '—'
+  };
+}
+
+function extractActionPlanJSON(content) {
+  if (!Array.isArray(content)) return null;
+  for (const block of content) {
+    if (block.type === 'text' && block.text) {
+      let s = block.text.trim();
+      s = s.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
+      const firstBrace = s.search(/[{\[]/);
+      if (firstBrace > 0) s = s.slice(firstBrace);
+      try { return JSON.parse(s); } catch (_) { /* try next block */ }
+    }
+  }
+  return null;
+}
+
+app.post('/api/action-plan', async (req, res) => {
+  const body = req.body || {};
+  const { vertical, quarters, amounts, source_filter, recent_signals } = body;
+  if (!vertical || !Array.isArray(amounts) || amounts.length === 0) {
+    return res.status(400).json({ error: 'vertical and amounts[] required' });
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.log(`[action-plan] No ANTHROPIC_API_KEY — returning fallback for "${vertical}"`);
+    return res.json(templateActionPlan(body));
+  }
+
+  const userMessage = [
+    `Vertical: ${vertical}`,
+    `Quarters: ${(quarters || []).join(', ')}`,
+    `Amounts (M CAD, oldest → newest): ${amounts.join(', ')}`,
+    `Source filter: ${source_filter || 'all'}`,
+    `Recent agent signals:`,
+    ...(Array.isArray(recent_signals) && recent_signals.length
+      ? recent_signals.map(s => `  - [${(s.kind || '').toUpperCase()}] ${s.body || ''}`)
+      : ['  (none yet)'])
+  ].join('\n');
+
+  try {
+    console.log(`[action-plan] Opus 4.7 call for "${vertical}" (source=${source_filter || 'all'})`);
+    const startedAt = Date.now();
+
+    const response = await anthropic.messages.create({
+      model: 'claude-opus-4-7',
+      max_tokens: 4096,
+      thinking: { type: 'adaptive' },
+      output_config: {
+        effort: 'high',
+        format: { type: 'json_schema', schema: ACTION_PLAN_SCHEMA }
+      },
+      system: [
+        { type: 'text', text: ACTION_PLAN_SYSTEM, cache_control: { type: 'ephemeral' } }
+      ],
+      messages: [{ role: 'user', content: userMessage }]
+    });
+
+    const elapsed = Date.now() - startedAt;
+    const usage = response.usage || {};
+    const cacheHits = `cache_read=${usage.cache_read_input_tokens || 0}, cache_create=${usage.cache_creation_input_tokens || 0}, in=${usage.input_tokens || 0}, out=${usage.output_tokens || 0}`;
+    console.log(`[action-plan] Opus 4.7 done in ${elapsed}ms · ${cacheHits}`);
+
+    const plan = extractActionPlanJSON(response.content);
+    if (!plan) throw new Error('Could not parse action plan JSON from response');
+
+    plan.vertical = plan.vertical || vertical;
+    plan.fallback = false;
+    plan.model_label = 'model';
+    plan.cache_hits = cacheHits;
+    res.json(plan);
+  } catch (err) {
+    console.error('[action-plan] Opus 4.7 error:', err.message);
+    const fallback = templateActionPlan(body);
+    fallback.error = err.message;
+    res.json(fallback);
+  }
+});
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || process.env.INTELLIGENCE_PORT || 3803;
 app.listen(PORT, () => {
   console.log(`\n🔍  Intelligence server running`);
   console.log(`    → http://localhost:${PORT}/search.html`);
+  console.log(`    → http://localhost:${PORT}/heatmap.html`);
   console.log(`    DB: ${connString.replace(/:\/\/.*@/, '://<credentials>@')}\n`);
 });

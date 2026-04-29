@@ -791,6 +791,58 @@
 </style>
 </head>
 <body>
+
+<!-- ─── Access gate (client-side, demo) ───────────────────────────────────── -->
+<div id="lvs-gate" style="position:fixed; inset:0; z-index:99999; background:linear-gradient(180deg,#0f2236 0%,#16314a 100%); display:flex; align-items:center; justify-content:center;">
+  <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:32px 36px; width:min(90vw,420px); font-family:'Inter',sans-serif; box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;">
+      <div style="width:40px;height:40px;border-radius:10px;background:#2da82c;display:flex;align-items:center;justify-content:center;">
+        <svg width="22" height="22" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M9 9 L16 22 L23 9" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <div style="color:#fff; font-weight:700; letter-spacing:0.3px;">Long View Systems</div>
+        <div style="color:rgba(255,255,255,0.6); font-size:12px;">Public Funding Intelligence</div>
+      </div>
+    </div>
+    <div style="color:#e6edf3; font-size:14px; margin-bottom:14px;">Enter access code to continue.</div>
+    <input id="lvs-gate-input" type="password" autocomplete="current-password" autofocus
+           placeholder="Access code"
+           style="width:100%; padding:10px 12px; font-size:14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.18); border-radius:8px; color:#fff; outline:none; font-family:inherit;">
+    <button id="lvs-gate-submit"
+            style="width:100%; margin-top:12px; padding:10px 12px; background:#2da82c; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:14px; font-family:inherit; cursor:pointer;">
+      Continue →
+    </button>
+    <div id="lvs-gate-error" style="visibility:hidden; color:#fca5a5; font-size:12px; margin-top:10px; text-align:center;">Incorrect access code</div>
+    <div style="color:rgba(255,255,255,0.4); font-size:11px; margin-top:18px; text-align:center;">Demo · April 29, 2026 · client-side gate</div>
+  </div>
+</div>
+<script>
+(function () {
+  var GATE_KEY = 'lvs-auth';
+  var GATE_VAL = 'longview-hack';
+  if (sessionStorage.getItem(GATE_KEY) === 'ok') {
+    var g = document.getElementById('lvs-gate'); if (g) g.parentNode.removeChild(g);
+    return;
+  }
+  var input = document.getElementById('lvs-gate-input');
+  var btn = document.getElementById('lvs-gate-submit');
+  var err = document.getElementById('lvs-gate-error');
+  var gate = document.getElementById('lvs-gate');
+  function check() {
+    if ((input.value || '').trim() === GATE_VAL) {
+      sessionStorage.setItem(GATE_KEY, 'ok');
+      gate.parentNode.removeChild(gate);
+    } else {
+      err.style.visibility = 'visible';
+      input.value = '';
+      input.focus();
+    }
+  }
+  btn.addEventListener('click', check);
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') check(); });
+})();
+</script>
+
 <div id="app">
 
   <!-- ─── Top navigation ─────────────────────────────────────────── -->

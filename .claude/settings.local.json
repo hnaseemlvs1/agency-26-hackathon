@@ -11,7 +11,15 @@
       "Bash(curl -s -X POST http://localhost:3802/api/entity/847291630/web-intel -H \"Content-Type: application/json\" -d '{\"canonical_name\":\"Green Future Foundation\",\"sector\":\"Climate\"}')",
       "Bash(node -e \"let s=''; process.stdin.on\\('data',c=>s+=c\\); process.stdin.on\\('end',\\(\\)=>{const d=JSON.parse\\(s\\); console.log\\('news count:', d.news_mentions.length\\); console.log\\('flags:', d.red_flags_found.length\\); console.log\\('first headline:', d.news_mentions[0].headline\\);}\\)\")",
       "Bash(pkill -f \"mock-server.js\")",
-      "Bash(taskkill //PID 35724 //F)"
+      "Bash(taskkill //PID 35724 //F)",
+      "Bash(node -e ' *)",
+      "Bash(node visualizations/intelligence-server.js)",
+      "Bash(curl -s http://localhost:3803/search.html)",
+      "Bash(curl -s -X POST http://localhost:3803/api/ai-search -H \"Content-Type: application/json\" -d '{\"query\":\"\"}')",
+      "Bash(node -e \"let s='';process.stdin.on\\('data',c=>s+=c\\);process.stdin.on\\('end',\\(\\)=>console.log\\(JSON.parse\\(s\\)\\)\\)\")",
+      "Bash(node -e \"let s='';process.stdin.on\\('data',c=>s+=c\\);process.stdin.on\\('end',\\(\\)=>{const d=JSON.parse\\(s\\);console.log\\(JSON.stringify\\(d,null,2\\)\\)}\\)\")",
+      "Bash(taskkill //PID 33184 //F)",
+      "Bash(taskkill //PID 36708 //F)"
     ]
   }
 }

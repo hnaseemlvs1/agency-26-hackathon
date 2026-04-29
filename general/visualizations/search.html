@@ -88,10 +88,16 @@
   .mode-badge.good { background: #1a7f3715; color: var(--ok); border: 1px solid #1a7f3730; }
   .mode-badge.mixed { background: #8250df15; color: var(--accent-2); border: 1px solid #8250df30; }
   .sql-toggle {
-    margin-left: auto; font-size: 12px; color: var(--accent); cursor: pointer;
+    font-size: 12px; color: var(--accent); cursor: pointer;
     background: none; border: none; padding: 0; font-family: inherit;
   }
   .sql-toggle:hover { text-decoration: underline; }
+  .export-btn {
+    margin-left: auto; font-size: 12px; padding: 4px 10px; border-radius: 5px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+    cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .export-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--surface-2); }
   .sql-box {
     background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
     padding: 12px 14px; font-size: 12px; font-family: ui-monospace, "Cascadia Code", monospace;
@@ -251,6 +257,20 @@
             font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
             background: linear-gradient(135deg, #0969da, #8250df);
             color: #fff; margin-left: 8px; vertical-align: middle; }
+  @media print {
+    body { background: #fff; color: #000; font-size: 12px; }
+    .header-left p, .search-area, .chips, .results-meta .export-btn,
+    .results-meta .sql-toggle, .sql-box, .web-intel-btn, .web-intel-panel,
+    .theme-btn, .dossier-link { display: none !important; }
+    .app { max-width: 100%; padding: 0; }
+    .result-card { break-inside: avoid; border: 1px solid #ccc; margin-bottom: 12px;
+                   box-shadow: none; page-break-inside: avoid; }
+    .card-name { font-size: 14px; font-weight: 700; }
+    .narrative { font-size: 11px; }
+    .flag-pill { border: 1px solid #ccc; background: #f5f5f5; color: #333; }
+    .results-meta { font-size: 11px; }
+    .mode-badge { border: 1px solid #999; }
+  }
 </style>
 </head>
 <body>
@@ -332,6 +352,8 @@
       </span>
       <span>Sorted by {{ meta.mode === 'good_actor' ? 'efficiency score' : 'risk score' }}</span>
       <button class="sql-toggle" @click="showSql = !showSql">{{ showSql ? '▲ Hide SQL' : '▼ Show generated SQL' }}</button>
+      <button class="export-btn" @click="exportCSV" title="Download as CSV (opens in Excel)">⬇ CSV</button>
+      <button class="export-btn" @click="exportPDF" title="Print / Save as PDF">🖨 PDF</button>
     </div>
 
     <!-- SQL box -->
@@ -563,12 +585,47 @@ createApp({
       return meta.mode === 'good_actor' ? '✅' : '🚩';
     }
 
+    function exportCSV() {
+      const headers = [
+        'Name', 'BN Root', 'Datasets', 'Score', 'Score Max', 'Score Label',
+        'Narrative', 'Flags', 'Policy Alignment', 'Priority Area', 'Risk Level', 'Policy Note'
+      ];
+      const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+      const rows = results.value.map(r => [
+        escape(r.canonical_name),
+        escape(r.bn_root),
+        escape((r.dataset_sources || []).join(', ')),
+        escape(r.score),
+        escape(r.score_max),
+        escape(r.score_label),
+        escape(r.narrative),
+        escape((r.flags || []).join(' | ')),
+        escape(r.policy_pulse?.alignment),
+        escape(r.policy_pulse?.priority_area),
+        escape(r.policy_pulse?.risk_level),
+        escape(r.policy_pulse?.policy_note),
+      ]);
+      const csv = [headers.map(h => `"${h}"`).join(','), ...rows.map(r => r.join(','))].join('\r\n');
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `intelligence-results-${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportPDF() {
+      window.print();
+    }
+
     return {
       dark, query, loading, hasSearched, results, meta, showSql, error, searchInput,
       webIntel, webIntelLoading, webIntelOpen,
       EXAMPLE_CHIPS,
       toggleTheme, useChip, search, toggleWebIntel,
-      cardClass, cardIcon, scoreBadgeClass, flagClass, flagIcon
+      cardClass, cardIcon, scoreBadgeClass, flagClass, flagIcon,
+      exportCSV, exportPDF
     };
   }
 }).mount('#app');
